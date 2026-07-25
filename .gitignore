@@ -1,0 +1,10 @@
+# Build artifacts / deps
+latex/node_modules/
+latex/diagrams/
+latex/*_pre.md
+latex/*.tex
+latex/_header.tex
+__pycache__/
+inject_tricks.py
+.DS_Store
+*.log

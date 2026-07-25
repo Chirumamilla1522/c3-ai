@@ -225,6 +225,57 @@ def fractionToDecimal(numerator: int, denominator: int) -> str:
 | **Time** | O(length of answer). At most `d` different remainders before a repeat, so O(d). |
 | **Space** | O(d) for `seen` + answer. |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Math shrink + fractional buffer (no `list.insert`)**
+
+- Cancel `gcd(n, d)` first so the remainder map is over a smaller modulus.
+- After canceling, strip all factors of `2` and `5` from `d`. If nothing remains (`d == 1`), the decimal **terminates** — you never need a remainder map (space for cycle detection drops to O(1)).
+- Build fractional digits in a separate `frac` list and **slice** when the cycle starts. Avoid `res.insert(...)` (shifts the whole list, O(p) per insert → O(p²) if abused).
+
+```python
+from math import gcd
+
+def fractionToDecimal(numerator, denominator):
+    if numerator == 0:
+        return "0"
+    sign = "-" if (numerator < 0) ^ (denominator < 0) else ""
+    n, d = abs(numerator), abs(denominator)
+    g = gcd(n, d)
+    n, d = n // g, d // g
+
+    integer, rem = divmod(n, d)
+    if rem == 0:
+        return sign + str(integer)
+
+    # Math: if d's only prime factors are 2 and/or 5, decimal terminates
+    dd = d
+    while dd % 2 == 0:
+        dd //= 2
+    while dd % 5 == 0:
+        dd //= 5
+    terminates = dd == 1
+
+    frac, first = [], {}
+    while rem:
+        if not terminates and rem in first:
+            i = first[rem]
+            return sign + str(integer) + "." + "".join(frac[:i]) + "(" + "".join(frac[i:]) + ")"
+        if not terminates:
+            first[rem] = len(frac)
+        rem *= 10
+        frac.append(str(rem // d))
+        rem %= d
+    return sign + str(integer) + "." + "".join(frac)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(p) fractional digits (same order as main; no O(p) middle shifts). |
+| **Space** | O(1) extra map when it terminates; else O(period) ≤ O(d′) where d′ is `d` with factors 2 and 5 removed. |
+| **vs main** | Math tells you when the map is unnecessary; slicing beats `insert` for cycle parentheses. |
+
 ### What to say in the interview
 
 > “I’ll simulate long division. I store each remainder and the index of the digit it produced. When a remainder repeats, I insert parentheses at the stored index — that’s exactly where the repeating block starts.”
@@ -326,6 +377,32 @@ def findPairs(nums, k):
 | k=0: need duplicates | `freq > 1` |
 | k>0: check partner x+k | `(x + k) in count` |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Set fast path**
+
+- For `k > 0`, multiplicity is irrelevant: iterate a set once and test `x + k`; only `k == 0` needs frequencies.
+- Use it when the interviewer asks whether a full `Counter` is necessary for every branch.
+
+```python
+from collections import Counter
+
+def findPairs(nums, k):
+    if k < 0:
+        return 0
+    if k == 0:
+        return sum(v > 1 for v in Counter(nums).values())
+    values = set(nums)
+    return sum(x + k in values for x in values)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n) expected. |
+| **Space** | O(u), for u distinct values. |
+| **vs main** | Avoids Counter values and counting overhead on the `k > 0` path. |
+
 ---
 
 ## 3. Koko Eating Bananas (LeetCode 875) — Medium
@@ -396,6 +473,38 @@ def minEatingSpeed(piles, h):
     return lo
 ```
 
+
+### Alternate — complexity trick
+
+**Trick:** **Early feasibility cutoff**
+
+- While testing a speed, stop summing as soon as required hours exceed `h`; ceiling division is `(p + speed - 1) // speed`.
+- Use it when failed binary-search probes contain many piles and can be rejected early.
+
+```python
+def minEatingSpeed(piles, h):
+    def works(speed):
+        hours = 0
+        for pile in piles:
+            hours += (pile + speed - 1) // speed
+            if hours > h:
+                return False
+        return True
+
+    lo, hi = 1, max(piles)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if works(mid): hi = mid
+        else: lo = mid + 1
+    return lo
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n log M), M = max pile; rejected probes may stop early. |
+| **Space** | O(1). |
+| **vs main** | Keeps the optimal search bound while pruning unnecessary feasibility work. |
+
 ---
 
 ## 4. Unique Paths (LeetCode 62) — Medium
@@ -460,6 +569,30 @@ def uniquePaths(m, n):
 
 C3 note: unmemoized recursion is about `O(2^(m+n))`, **not** `O(2^(m*n))`. Return values from dfs so `@lru_cache` works — no global counter.
 
+
+### Alternate — complexity trick
+
+**Trick:** **Binomial path count**
+
+- Every path is an ordering of `m-1` down moves and `n-1` right moves, so compute one binomial coefficient.
+- Use it when there are no blocked cells; obstacles destroy the direct combination formula.
+
+```python
+def uniquePaths(m, n):
+    total = m + n - 2
+    choose = min(m - 1, n - 1)
+    ans = 1
+    for i in range(1, choose + 1):
+        ans = ans * (total - choose + i) // i
+    return ans
+```
+
+| | |
+|:---|:---|
+| **Time** | O(min(m, n)). |
+| **Space** | O(1). |
+| **vs main** | Beats O(mn) DP time and its row/table storage. |
+
 ---
 
 ## 5. Coin Change (LeetCode 322) — Medium
@@ -508,6 +641,39 @@ def coinChange(coins, amount):
                 dp[a] = min(dp[a], dp[a - c] + 1)
     return dp[amount] if dp[amount] != float("inf") else -1
 ```
+
+
+### Alternate — complexity trick
+
+**Trick:** **Layered amount BFS**
+
+- Treat each reachable amount as a node and each added coin as one edge; the first layer reaching `amount` uses the fewest coins.
+- Use it when the target may be reached in very few coins, allowing an early stop; DP is usually simpler otherwise.
+
+```python
+from collections import deque
+
+def coinChange(coins, amount):
+    q, seen, steps = deque([0]), {0}, 0
+    while q:
+        for _ in range(len(q)):
+            cur = q.popleft()
+            if cur == amount:
+                return steps
+            for coin in coins:
+                nxt = cur + coin
+                if nxt <= amount and nxt not in seen:
+                    seen.add(nxt)
+                    q.append(nxt)
+        steps += 1
+    return -1
+```
+
+| | |
+|:---|:---|
+| **Time** | O(amount · len(coins)) worst case. |
+| **Space** | O(amount). |
+| **vs main** | Can stop before filling the whole DP range when the optimum has few coins. |
 
 ---
 
@@ -562,6 +728,30 @@ def isValid(s):
     return not stack
 ```
 
+
+### Alternate — complexity trick
+
+**Trick:** **Single-type balance**
+
+- With only `(` and `)`, a counter replaces the stack; reject immediately if a prefix balance becomes negative.
+- Use only when there is one bracket type; matching multiple types still requires a stack.
+
+```python
+def isValidSingleType(s):
+    balance = 0
+    for ch in s:
+        balance += 1 if ch == "(" else -1
+        if balance < 0:
+            return False
+    return balance == 0
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(1). |
+| **vs main** | Removes the O(n) stack under the single-bracket constraint. |
+
 ---
 
 ## 7. Trapping Rain Water (LeetCode 42) — Hard
@@ -607,6 +797,32 @@ def trap(height):
             r -= 1
     return ans
 ```
+
+
+### Alternate — complexity trick
+
+**Trick:** **Prefix maxima**
+
+- Precompute the highest wall on each side, making each cell's trapped water a direct `min(left, right) - height` calculation.
+- Use it when clarity and easy verification matter more than the two-pointer solution's space advantage.
+
+```python
+def trap(height):
+    n = len(height)
+    if n < 3: return 0
+    left, right = height[:], height[:]
+    for i in range(1, n):
+        left[i] = max(left[i - 1], height[i])
+    for i in range(n - 2, -1, -1):
+        right[i] = max(right[i + 1], height[i])
+    return sum(min(left[i], right[i]) - height[i] for i in range(n))
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(n). |
+| **vs main** | Same linear time but a clearer invariant; intentionally trades away O(1) space. |
 
 ---
 
@@ -673,6 +889,38 @@ def orangesRotting(grid):
     return minutes if fresh == 0 else -1
 ```
 
+
+### Alternate — complexity trick
+
+**Trick:** **Grid timestamps**
+
+- Write minute values directly into fresh-orange cells, so the grid itself is both visited state and distance.
+- Use it when mutating the input is allowed; otherwise keep a separate visited structure.
+
+```python
+from collections import deque
+
+def orangesRotting(grid):
+    q = deque((r, c) for r in range(len(grid))
+              for c in range(len(grid[0])) if grid[r][c] == 2)
+    last = 2
+    while q:
+        r, c = q.popleft()
+        last = max(last, grid[r][c])
+        for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)):
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < len(grid) and 0 <= nc < len(grid[0]) and grid[nr][nc] == 1:
+                grid[nr][nc] = grid[r][c] + 1
+                q.append((nr, nc))
+    return -1 if any(1 in row for row in grid) else last - 2
+```
+
+| | |
+|:---|:---|
+| **Time** | O(rows · cols). |
+| **Space** | O(rows · cols) queue worst case; O(1) visited storage. |
+| **vs main** | Eliminates a separate visited set by encoding BFS time in place. |
+
 ---
 
 ## 9. Merge Intervals (LeetCode 56) — Medium
@@ -713,6 +961,32 @@ def merge(intervals):
             out.append([s, e])
     return out
 ```
+
+
+### Alternate — complexity trick
+
+**Trick:** **In-place sort and coalesce**
+
+- Sort the input itself and append only disjoint intervals; overwrite the last output end when intervals overlap.
+- Use it when input mutation is permitted and output storage is not counted as auxiliary space.
+
+```python
+def merge(intervals):
+    intervals.sort()
+    out = []
+    for start, end in intervals:
+        if not out or start > out[-1][1]:
+            out.append([start, end])
+        else:
+            out[-1][1] = max(out[-1][1], end)
+    return out
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n log n). |
+| **Space** | O(1) auxiliary beyond sorting internals and output. |
+| **vs main** | Avoids a copied sorted list and any extra merge structure. |
 
 ---
 
@@ -766,6 +1040,37 @@ class LRUCache:
         if len(self.od) > self.cap:
             self.od.popitem(last=False)  # METHOD: evict LRU
 ```
+
+
+### Alternate — complexity trick
+
+**Trick:** **Ordered dictionary**
+
+- `OrderedDict.move_to_end` performs the recency splice, while `popitem(last=False)` evicts the least-recent key.
+- Mention this as production Python; implement the hash map plus DLL when the interview tests data-structure design.
+
+```python
+from collections import OrderedDict
+
+class LRUCache:
+    def __init__(self, capacity):
+        self.capacity, self.data = capacity, OrderedDict()
+    def get(self, key):
+        if key not in self.data: return -1
+        self.data.move_to_end(key)
+        return self.data[key]
+    def put(self, key, value):
+        if key in self.data: self.data.move_to_end(key)
+        self.data[key] = value
+        if len(self.data) > self.capacity:
+            self.data.popitem(last=False)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(1) average per operation. |
+| **Space** | O(capacity). |
+| **vs main** | Uses a tested built-in; in a handmade DLL, storing each node's key enables O(1) map deletion on eviction. |
 
 ---
 
@@ -822,6 +1127,31 @@ import heapq, bisect, random
 # Assume ListNode / TreeNode exist as on LeetCode.
 ```
 
+
+### Alternate — complexity trick
+
+**Trick:** **Prefix existence set**
+
+- If the question asks only whether a target-sum subarray exists, store seen prefixes rather than every prefix's multiplicity.
+- Use it for a boolean variant; counting all matching subarrays requires the frequency map.
+
+```python
+def hasSubarraySum(nums, k):
+    prefix, seen = 0, {0}
+    for x in nums:
+        prefix += x
+        if prefix - k in seen:
+            return True
+        seen.add(prefix)
+    return False
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n) expected. |
+| **Space** | O(n). |
+| **vs main** | Stores membership only and can return on the first witness. |
+
 ---
 
 ## 12. Find the Index of the First Occurrence in a String (LeetCode 28) — Easy
@@ -866,6 +1196,37 @@ class Solution:
 | **Time** | O(n * m) naive; O(n + m) with full KMP |
 | **Space** | O(1) naive; O(m) for KMP failure table |
 
+
+### Alternate — complexity trick
+
+**Trick:** **KMP failure links**
+
+- The LPS table reuses the longest valid pattern prefix after a mismatch instead of restarting comparisons.
+- Use it when worst-case guarantees matter or the text contains highly repetitive prefixes.
+
+```python
+def strStr(text, pattern):
+    if not pattern: return 0
+    lps = [0] * len(pattern)
+    j = 0
+    for i in range(1, len(pattern)):
+        while j and pattern[i] != pattern[j]: j = lps[j - 1]
+        if pattern[i] == pattern[j]: j += 1
+        lps[i] = j
+    j = 0
+    for i, ch in enumerate(text):
+        while j and ch != pattern[j]: j = lps[j - 1]
+        if ch == pattern[j]: j += 1
+        if j == len(pattern): return i - j + 1
+    return -1
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n + m). |
+| **Space** | O(m). |
+| **vs main** | Improves naive O(nm) worst-case matching to linear time. |
+
 ### What to say
 "I slide the needle across the haystack and verify character-by-character. The brute force is acceptable for small inputs; if asked to optimize, I'd build the KMP prefix function so we never move the haystack pointer backward."
 
@@ -908,6 +1269,32 @@ class Solution:
 |:---|:---|
 | **Time** | O(log n) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Slope invariant**
+
+- Comparing `nums[mid]` with its right neighbor reveals a side guaranteed to contain a peak, so no sentinels or linear scan are needed.
+- Use this to state why discarding half is valid even when the array is not globally sorted.
+
+```python
+def findPeakElement(nums):
+    lo, hi = 0, len(nums) - 1
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if nums[mid] > nums[mid + 1]:
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
+```
+
+| | |
+|:---|:---|
+| **Time** | O(log n). |
+| **Space** | O(1). |
+| **vs main** | Preserves the optimal bounds; the trick is the local-slope proof, not a second data structure. |
 
 ### What to say
 "I binary search by comparing `mid` with its right neighbor. The array behaves like a mountain with virtual cliffs at both ends, so one side always leads uphill to a peak."
@@ -954,6 +1341,31 @@ class Solution:
 |:---|:---|
 | **Time** | O(n log n * k) where k = average digit length |
 | **Space** | O(n * k) for strings |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Concatenation comparator**
+
+- Order strings `a` and `b` by whether `a+b` or `b+a` is larger; collapse an all-zero result immediately.
+- Use it because numeric or lexicographic sorting alone does not encode concatenation order.
+
+```python
+from functools import cmp_to_key
+
+def largestNumber(nums):
+    parts = list(map(str, nums))
+    def compare(a, b):
+        return (b + a > a + b) - (b + a < a + b)
+    parts.sort(key=cmp_to_key(compare))
+    return "0" if parts[0] == "0" else "".join(parts)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n log n · L) for comparison length L. |
+| **Space** | O(nL). |
+| **vs main** | Gets the correct custom order and avoids returning strings like `000`. |
 
 ### What to say
 "The trick is sorting strings by which concatenation is lexicographically larger. That comparator is transitive enough for Python's sort and gives the globally largest number."
@@ -1003,6 +1415,35 @@ class Solution:
 | **Time** | O(n) |
 | **Space** | O(n) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Total-sum complement**
+
+- For candidate outlier `x`, the remaining total must be twice a present special-sum value; temporarily remove `x` to handle duplicates correctly.
+- Use it to avoid recomputing sums or rescanning the array for each candidate.
+
+```python
+from collections import Counter
+
+def getLargestOutlier(nums):
+    count, total = Counter(nums), sum(nums)
+    answer = float("-inf")
+    for x in count:
+        count[x] -= 1
+        rest = total - x
+        if rest % 2 == 0 and count[rest // 2] > 0:
+            answer = max(answer, x)
+        count[x] += 1
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(n). |
+| **vs main** | Uses one Counter and one total instead of nested candidate checks. |
+
 ### What to say
 "If one number is the outlier, the rest must sum to it. For each candidate `y`, I compute the implied outlier `total - 2y` and verify it exists in the multiset."
 
@@ -1046,6 +1487,34 @@ class Solution:
 |:---|:---|
 | **Time** | O(n + |order|) |
 | **Space** | O(1) extra (26 letters) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Fixed alphabet counts**
+
+- A 26-slot array emits characters in `order` first, then emits every leftover count.
+- Use it when inputs are lowercase English letters; use a Counter for a larger or unknown alphabet.
+
+```python
+def customSortString(order, s):
+    count = [0] * 26
+    for ch in s: count[ord(ch) - 97] += 1
+    out = []
+    for ch in order:
+        i = ord(ch) - 97
+        out.append(ch * count[i])
+        count[i] = 0
+    for i, freq in enumerate(count):
+        out.append(chr(i + 97) * freq)
+    return "".join(out)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(len(s) + 26). |
+| **Space** | O(1) auxiliary for a fixed alphabet. |
+| **vs main** | Replaces a hash map or comparison sort with constant-size direct addressing. |
 
 ### What to say
 "I count letters in `s`, emit them in the priority of `order`, then dump anything left. It's a stable priority sort without a full custom comparator."
@@ -1108,6 +1577,39 @@ class MyHashMap:
 | **Time** | O(1) average per op; O(n) worst bucket |
 | **Space** | O(n + m) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Prime bucket count**
+
+- Separate chaining with a prime number of buckets reduces regular collision patterns from structured integer keys.
+- Use it to discuss collision behavior; resizing is still needed for production-grade load-factor guarantees.
+
+```python
+class MyHashMap:
+    SIZE = 2069
+    def __init__(self):
+        self.buckets = [[] for _ in range(self.SIZE)]
+    def put(self, key, value):
+        bucket = self.buckets[key % self.SIZE]
+        for pair in bucket:
+            if pair[0] == key: pair[1] = value; return
+        bucket.append([key, value])
+    def get(self, key):
+        for k, value in self.buckets[key % self.SIZE]:
+            if k == key: return value
+        return -1
+    def remove(self, key):
+        bucket = self.buckets[key % self.SIZE]
+        self.buckets[key % self.SIZE] = [p for p in bucket if p[0] != key]
+```
+
+| | |
+|:---|:---|
+| **Time** | O(1) average, O(n) worst case. |
+| **Space** | O(n + buckets). |
+| **vs main** | Lowers avoidable modulo collision patterns while retaining simple chaining. |
+
 ### What to say
 "I use modular hashing into buckets with chaining. Collisions are handled by scanning a short list in each bucket — standard separate chaining."
 
@@ -1153,6 +1655,30 @@ class Solution:
 |:---|:---|
 | **Time** | O(n²) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Transpose then reverse**
+
+- Reflect across the main diagonal, then reverse each row; together those transforms equal a 90° clockwise rotation.
+- Use it when the matrix must be changed in place and is square.
+
+```python
+def rotate(matrix):
+    n = len(matrix)
+    for r in range(n):
+        for c in range(r + 1, n):
+            matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]
+    for row in matrix:
+        row.reverse()
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n²). |
+| **Space** | O(1). |
+| **vs main** | Avoids constructing a rotated n-by-n copy. |
 
 ### What to say
 "Clockwise 90° is transpose then reverse each row. Two in-place passes, no temp matrix."
@@ -1211,6 +1737,35 @@ class TicTacToe:
 | **Time** | O(1) per move |
 | **Space** | O(n) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Signed line counters**
+
+- Add `+1` for one player and `-1` for the other to row, column, and diagonal totals; absolute value `n` means a win.
+- Use it when moves are valid and the board need not be reconstructed.
+
+```python
+class TicTacToe:
+    def __init__(self, n):
+        self.n = n
+        self.rows = [0] * n
+        self.cols = [0] * n
+        self.diag = self.anti = 0
+    def move(self, row, col, player):
+        delta = 1 if player == 1 else -1
+        self.rows[row] += delta; self.cols[col] += delta
+        if row == col: self.diag += delta
+        if row + col == self.n - 1: self.anti += delta
+        return player if self.n in map(abs, (self.rows[row], self.cols[col], self.diag, self.anti)) else 0
+```
+
+| | |
+|:---|:---|
+| **Time** | O(1) per move. |
+| **Space** | O(n). |
+| **vs main** | Replaces O(n) board scans after every move with four counter updates. |
+
 ### What to say
 "I maintain cumulative scores per row, column, and diagonal. A win is detected when any line hits plus or minus n."
 
@@ -1253,6 +1808,30 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) |
 | **Space** | O(n) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Rolling value DP**
+
+- For each value `x`, only the best subsequence ending at `x-difference` can extend into the best ending at `x`.
+- Use it when order matters but the transition depends on one predecessor value rather than all prior indices.
+
+```python
+def longestSubsequence(arr, difference):
+    best = {}
+    answer = 0
+    for x in arr:
+        best[x] = best.get(x - difference, 0) + 1
+        answer = max(answer, best[x])
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n) expected. |
+| **Space** | O(u), only distinct ending values. |
+| **vs main** | Compresses index DP to one state per value and removes the O(n²) scan. |
 
 ### What to say
 "For each number, I extend the chain ending at `x - diff`. A hash map stores the best length ending at each value."
@@ -1298,6 +1877,31 @@ class Solution:
 |:---|:---|
 | **Time** | O(m + n) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Fill from the back**
+
+- The largest remaining item belongs at the last free slot, so writing backward never overwrites unread values in `nums1`.
+- Use it whenever the destination has trailing capacity for an in-place merge.
+
+```python
+def merge(nums1, m, nums2, n):
+    i, j, write = m - 1, n - 1, m + n - 1
+    while j >= 0:
+        if i >= 0 and nums1[i] > nums2[j]:
+            nums1[write] = nums1[i]; i -= 1
+        else:
+            nums1[write] = nums2[j]; j -= 1
+        write -= 1
+```
+
+| | |
+|:---|:---|
+| **Time** | O(m + n). |
+| **Space** | O(1). |
+| **vs main** | Avoids an O(m+n) merged copy or costly front insertions. |
 
 ### What to say
 "I merge from the rear so unused slots in `nums1` get filled first and nothing gets overwritten before it's moved."
@@ -1349,6 +1953,33 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Dual Kadane pass**
+
+- A wrapped maximum equals total sum minus the minimum subarray; compute max, min, and total together.
+- Use the non-wrapped maximum when every value is negative, because subtracting the whole minimum would produce an invalid empty subarray.
+
+```python
+def maxSubarraySumCircular(nums):
+    total = 0
+    cur_max = best_max = nums[0]
+    cur_min = best_min = nums[0]
+    for i, x in enumerate(nums):
+        if i:
+            cur_max = max(x, cur_max + x); best_max = max(best_max, cur_max)
+            cur_min = min(x, cur_min + x); best_min = min(best_min, cur_min)
+        total += x
+    return best_max if best_max < 0 else max(best_max, total - best_min)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(1). |
+| **vs main** | Gets both wrapped and ordinary candidates in one pass without doubled arrays. |
 
 ### What to say
 "The best circular segment is either a normal subarray or everything except the worst middle chunk. Kadane gives max and min subarray sums."
@@ -1417,6 +2048,40 @@ class Solution:
 | **Time** | O(N log N) for sorting emails; union-find ~ O(N α(N)) |
 | **Space** | O(N) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Ranked disjoint sets**
+
+- Union emails through account representatives; path compression and union by rank make repeated connectivity operations nearly constant.
+- Use it when account-email links form connected components rather than a simple one-pass grouping.
+
+```python
+def accountsMerge(accounts):
+    parent, rank, owner = {}, {}, {}
+    def find(x):
+        parent.setdefault(x, x)
+        if parent[x] != x: parent[x] = find(parent[x])
+        return parent[x]
+    def union(a, b):
+        a, b = find(a), find(b)
+        if a == b: return
+        if rank.get(a, 0) < rank.get(b, 0): a, b = b, a
+        parent[b] = a
+        rank[a] = max(rank.get(a, 0), rank.get(b, 0) + 1)
+    for account in accounts:
+        for email in account[1:]: owner[email] = account[0]; union(account[1], email)
+    groups = {}
+    for email in owner: groups.setdefault(find(email), []).append(email)
+    return [[owner[root]] + sorted(emails) for root, emails in groups.items()]
+```
+
+| | |
+|:---|:---|
+| **Time** | O(E α(E) + E log E). |
+| **Space** | O(E). |
+| **vs main** | Path compression plus rank prevents tall union-find trees. |
+
 ### What to say
 "Emails are nodes; accounts connect them. Union-Find merges shared emails, then I bucket by root and sort."
 
@@ -1469,6 +2134,36 @@ class Solution:
 | **Time** | O(2^n) worst case |
 | **Space** | O(n) recursion depth |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Sorted duplicate pruning**
+
+- Sorting lets one depth skip equal candidates and lets the search stop once a candidate exceeds the remaining target.
+- Use the `i > start` duplicate test: equal values may still be selected at different recursion depths.
+
+```python
+def combinationSum2(candidates, target):
+    candidates.sort()
+    out = []
+    def search(start, remain, path):
+        if remain == 0: out.append(path[:]); return
+        for i in range(start, len(candidates)):
+            if i > start and candidates[i] == candidates[i - 1]: continue
+            if candidates[i] > remain: break
+            path.append(candidates[i])
+            search(i + 1, remain - candidates[i], path)
+            path.pop()
+    search(0, target, [])
+    return out
+```
+
+| | |
+|:---|:---|
+| **Time** | O(2ⁿ) worst case, with substantial pruning. |
+| **Space** | O(n) recursion excluding output. |
+| **vs main** | Avoids duplicate result generation and impossible high-value branches. |
+
 ### What to say
 "Sort first, use index-based backtracking, and skip duplicate branches at the same tree level to avoid repeated combinations."
 
@@ -1512,6 +2207,30 @@ class Solution:
 | **Time** | O(n) |
 | **Space** | O(1) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Iterative pointer reversal**
+
+- Carry `prev`, detach the current node toward it, and save `next` before changing the link.
+- Use it to avoid recursion depth limits and one stack frame per node.
+
+```python
+def reverseList(head):
+    prev = None
+    while head:
+        nxt = head.next
+        head.next = prev
+        prev, head = head, nxt
+    return prev
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(1). |
+| **vs main** | Removes the recursive solution's O(n) call stack. |
+
 ### What to say
 "I walk the list once, rewiring each node to point backward. Three pointers keep track of previous, current, and next."
 
@@ -1549,6 +2268,30 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) |
 | **Space** | O(1) alphabet |
+
+
+### Alternate — complexity trick
+
+**Trick:** **First-index array**
+
+- Track each lowercase letter's first index and mark repeated letters with `-2`; the smallest nonnegative index is the answer.
+- Use it for a fixed 26-letter alphabet; a Counter is more general for Unicode.
+
+```python
+def firstUniqChar(s):
+    first = [-1] * 26
+    for i, ch in enumerate(s):
+        j = ord(ch) - 97
+        first[j] = i if first[j] == -1 else -2
+    answer = min((i for i in first if i >= 0), default=-1)
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n + 26). |
+| **Space** | O(1). |
+| **vs main** | Uses fixed direct-address storage and avoids a second scan of the full string. |
 
 ### What to say
 "Two passes: build frequencies, then return the first character that appears exactly once."
@@ -1592,6 +2335,27 @@ class Solution:
 |:---|:---|
 | **Time** | O(n log n) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Cost-difference ordering**
+
+- Sending everyone to A gives a baseline; sorting by `costB-costA` chooses the half with the cheapest switches to B.
+- Use it to explain the greedy exchange argument: any inverted pair can be swapped without improving cost.
+
+```python
+def twoCitySchedCost(costs):
+    costs.sort(key=lambda c: c[1] - c[0])
+    half = len(costs) // 2
+    return sum(b for _, b in costs[:half]) + sum(a for a, _ in costs[half:])
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n log n). |
+| **Space** | O(1) auxiliary if sorting in place. |
+| **vs main** | Reduces a two-choice assignment problem to one scalar sort key. |
 
 ### What to say
 "People with the smallest A-minus-B difference should fly to A. Sort ascending by `costA - costB`, send the first half to A and the rest to B."
@@ -1652,6 +2416,36 @@ class Solution:
 | **Time** | O(n²) |
 | **Space** | O(n²) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Inverse preference ranks**
+
+- Precompute `rank[x][y]`, turning every 'does x prefer u to y?' query from a list scan into O(1).
+- Use it whenever the same preference ordering is queried many times.
+
+```python
+def unhappyFriends(n, preferences, pairs):
+    rank = [[0] * n for _ in range(n)]
+    partner = [0] * n
+    for x in range(n):
+        for i, y in enumerate(preferences[x]): rank[x][y] = i
+    for x, y in pairs: partner[x], partner[y] = y, x
+    unhappy = 0
+    for x in range(n):
+        y = partner[x]
+        unhappy += any(rank[x][u] < rank[x][y] and
+                       rank[u][x] < rank[u][partner[u]]
+                       for u in preferences[x][:rank[x][y]])
+    return unhappy
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n²). |
+| **Space** | O(n²). |
+| **vs main** | Avoids repeated O(n) preference searches that can push the check to O(n³). |
+
 ### What to say
 "Precompute ranks and partners. Friend x is unhappy if someone they prefer over their partner also prefers them back over their own partner."
 
@@ -1693,6 +2487,32 @@ class Solution:
 |:---|:---|
 | **Time** | O(log(n - k) + k) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Binary-search the window**
+
+- The answer is a contiguous length-k window; compare the two boundary losses to decide whether its start lies left or right.
+- Use it because selecting k items individually wastes the input's sorted structure.
+
+```python
+def findClosestElements(arr, k, x):
+    lo, hi = 0, len(arr) - k
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if x - arr[mid] > arr[mid + k] - x:
+            lo = mid + 1
+        else:
+            hi = mid
+    return arr[lo:lo + k]
+```
+
+| | |
+|:---|:---|
+| **Time** | O(log(n-k) + k) including output. |
+| **Space** | O(k) output, O(1) auxiliary. |
+| **vs main** | Improves expansion or sorting approaches by locating the whole window directly. |
 
 ### What to say
 "The k closest elements form a length-k window. I binary search the best left boundary by comparing edge distances to x."
@@ -1739,6 +2559,31 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) worst; often less with pruning |
 | **Space** | O(h) recursion |
+
+
+### Alternate — complexity trick
+
+**Trick:** **BST range pruning**
+
+- If a node is below `low`, discard its entire left subtree; if above `high`, discard its entire right subtree.
+- Use it only because BST ordering proves those skipped branches cannot contribute.
+
+```python
+def rangeSumBST(root, low, high):
+    if not root: return 0
+    if root.val < low:
+        return rangeSumBST(root.right, low, high)
+    if root.val > high:
+        return rangeSumBST(root.left, low, high)
+    return (root.val + rangeSumBST(root.left, low, high)
+            + rangeSumBST(root.right, low, high))
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n) worst case, often proportional to visited/pruned nodes. |
+| **Space** | O(h) recursion. |
+| **vs main** | Can skip whole subtrees instead of visiting every node. |
 
 ### What to say
 "I DFS but prune: if the node is too small I only need the right subtree; if too large, only left."
@@ -1790,6 +2635,35 @@ class Solution:
 |:---|:---|
 | **Time** | O(log n) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Sorted-half elimination**
+
+- At least one half around `mid` is sorted; test whether the target belongs in that half before discarding the other.
+- Use the inclusive boundary checks carefully; this version assumes distinct values.
+
+```python
+def search(nums, target):
+    lo, hi = 0, len(nums) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if nums[mid] == target: return mid
+        if nums[lo] <= nums[mid]:
+            if nums[lo] <= target < nums[mid]: hi = mid - 1
+            else: lo = mid + 1
+        else:
+            if nums[mid] < target <= nums[hi]: lo = mid + 1
+            else: hi = mid - 1
+    return -1
+```
+
+| | |
+|:---|:---|
+| **Time** | O(log n). |
+| **Space** | O(1). |
+| **vs main** | Retains binary-search complexity despite the rotation. |
 
 ### What to say
 "At each step I identify which half is sorted and check whether the target can live there."
@@ -1846,6 +2720,35 @@ class Solution:
 | **Time** | O(m * n * 4^L) |
 | **Space** | O(L) recursion |
 
+
+### Alternate — complexity trick
+
+**Trick:** **In-place visitation mark**
+
+- Temporarily replace a used board cell with `#`, recurse, then restore it during backtracking.
+- Use it when board mutation is allowed during the call; restoration preserves the caller-visible input.
+
+```python
+def exist(board, word):
+    rows, cols = len(board), len(board[0])
+    def dfs(r, c, i):
+        if i == len(word): return True
+        if not (0 <= r < rows and 0 <= c < cols) or board[r][c] != word[i]:
+            return False
+        saved, board[r][c] = board[r][c], "#"
+        found = any(dfs(r + dr, c + dc, i + 1)
+                    for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)))
+        board[r][c] = saved
+        return found
+    return any(dfs(r, c, 0) for r in range(rows) for c in range(cols))
+```
+
+| | |
+|:---|:---|
+| **Time** | O(rows · cols · 4ᴸ). |
+| **Space** | O(L) recursion; O(1) visited storage. |
+| **vs main** | Removes the per-path visited set. |
+
 ### What to say
 "I try every starting cell and DFS with backtracking, marking cells visited and restoring them when retreating."
 
@@ -1889,6 +2792,30 @@ class Solution:
 | **Time** | O(n * m) with join check; O(n) with rolling hash/KMP |
 | **Space** | O(n) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Suffix-only stack check**
+
+- After appending one character, only the stack's newest `m` characters can form a new occurrence of `part`.
+- Use it for online removal; repeated global `replace` calls rescan old text.
+
+```python
+def removeOccurrences(s, part):
+    stack, m = [], len(part)
+    for ch in s:
+        stack.append(ch)
+        if len(stack) >= m and "".join(stack[-m:]) == part:
+            del stack[-m:]
+    return "".join(stack)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(nm) with direct suffix comparison. |
+| **Space** | O(n). |
+| **vs main** | Avoids repeatedly rescanning the entire remaining string; a KMP-state stack can make it O(n). |
+
 ### What to say
 "I simulate building the string with a stack and delete whenever the tail matches `part` — that naturally handles overlaps."
 
@@ -1930,6 +2857,32 @@ class Solution:
 |:---|:---|
 | **Time** | O(n²) shown; O(n log n) with patience + bisect |
 | **Space** | O(n) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Patience tails**
+
+- `tails[i]` stores the smallest possible tail of an increasing subsequence of length `i+1`; binary-search where each value belongs.
+- Use `bisect_left` for strictly increasing LIS and `bisect_right` for nondecreasing LIS.
+
+```python
+from bisect import bisect_left
+
+def lengthOfLIS(nums):
+    tails = []
+    for x in nums:
+        i = bisect_left(tails, x)
+        if i == len(tails): tails.append(x)
+        else: tails[i] = x
+    return len(tails)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n log n). |
+| **Space** | O(n). |
+| **vs main** | Improves the index-pair DP from O(n²) to O(n log n). |
 
 ### What to say
 "I start with the classic DP where each index extends all smaller predecessors. If we need faster, patience sorting with binary search on tail arrays gives O(n log n)."
@@ -1986,6 +2939,31 @@ class Solution:
 | **Time** | O(n) |
 | **Space** | O(1) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Ignore-space alignment**
+
+- Two pointers visit only `L` and `R`; corresponding pieces must match, and `L` may only move left while `R` may only move right.
+- Use it to avoid simulating every legal move or building intermediate strings.
+
+```python
+def canChange(start, target):
+    a = [(ch, i) for i, ch in enumerate(start) if ch != "_"]
+    b = [(ch, i) for i, ch in enumerate(target) if ch != "_"]
+    if [ch for ch, _ in a] != [ch for ch, _ in b]: return False
+    for (ch, i), (_, j) in zip(a, b):
+        if ch == "L" and i < j: return False
+        if ch == "R" and i > j: return False
+    return True
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(n) here; O(1) with streaming pointers. |
+| **vs main** | Replaces move simulation with invariant checks; a streaming implementation uses constant space. |
+
 ### What to say
 "I skip blanks on both strings in sync. L pieces must not be right of their target; R pieces must not be left of their target."
 
@@ -2036,6 +3014,33 @@ class Solution:
 | **Time** | O(log(mn)) |
 | **Space** | O(1) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Flattened binary search**
+
+- Map virtual index `i` to `matrix[i // cols][i % cols]`, treating the ordered matrix as one sorted array.
+- Use it when each row starts after the previous row ends; row-and-column sorted matrices need a different search.
+
+```python
+def searchMatrix(matrix, target):
+    rows, cols = len(matrix), len(matrix[0])
+    lo, hi = 0, rows * cols - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        value = matrix[mid // cols][mid % cols]
+        if value == target: return True
+        if value < target: lo = mid + 1
+        else: hi = mid - 1
+    return False
+```
+
+| | |
+|:---|:---|
+| **Time** | O(log(rows · cols)). |
+| **Space** | O(1). |
+| **vs main** | Uses one binary search rather than searching rows separately. |
+
 ### What to say
 "I treat the matrix as a sorted array of length m*n and binary search with index-to-cell conversion."
 
@@ -2082,6 +3087,34 @@ class Solution:
 |:---|:---|
 | **Time** | O(P log P + L * log P) where L = searchWord length |
 | **Space** | O(1) extra |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Bisected prefix range**
+
+- After sorting products, binary-search the first product for each growing prefix and inspect only the next three entries.
+- Use it for a static catalog; a trie is preferable for many dynamic prefix queries.
+
+```python
+from bisect import bisect_left
+
+def suggestedProducts(products, searchWord):
+    products.sort()
+    answer, start, prefix = [], 0, ""
+    for ch in searchWord:
+        prefix += ch
+        start = bisect_left(products, prefix, start)
+        answer.append([p for p in products[start:start + 3]
+                       if p.startswith(prefix)])
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n log n + m log n), excluding small output checks. |
+| **Space** | O(1) auxiliary beyond output if sorting in place. |
+| **vs main** | Avoids scanning every product for every prefix. |
 
 ### What to say
 "Sort once, then for each typed character binary search the prefix lower bound and grab up to three matches."
@@ -2136,6 +3169,37 @@ class BSTIterator:
 |:---|:---|
 | **Time** | O(1) amortized `next`; O(h) init |
 | **Space** | O(h) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Lazy left spine**
+
+- Keep only the path to the next inorder node; after popping it, push the left spine of its right subtree.
+- Use it to explain why each node is pushed and popped once, giving amortized O(1) `next`.
+
+```python
+class BSTIterator:
+    def __init__(self, root):
+        self.stack = []
+        self._push_left(root)
+    def _push_left(self, node):
+        while node:
+            self.stack.append(node)
+            node = node.left
+    def next(self):
+        node = self.stack.pop()
+        self._push_left(node.right)
+        return node.val
+    def hasNext(self):
+        return bool(self.stack)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(1) amortized `next`, O(1) `hasNext`. |
+| **Space** | O(h). |
+| **vs main** | Avoids materializing all n inorder values. |
 
 ### What to say
 "I simulate inorder with a stack of left paths. Each `next` pops the smallest and advances to the next inorder node."
@@ -2196,6 +3260,38 @@ class Solution:
 | **Time** | O(26 * max_freq) — sketch only; full LC Hard may be higher |
 | **Space** | O(1) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Enumerate target frequency**
+
+- The alphabet is only 26 letters, so try every target frequency and use DP across adjacent letters to account for delete, insert, or increment-to-next-letter operations.
+- Use it to turn an unbounded-looking target choice into at most `max(count)` small 26-state evaluations.
+
+```python
+from collections import Counter
+
+def makeStringGood(s):
+    freq = [Counter(s)[chr(97 + i)] for i in range(26)]
+    answer = len(s)
+    for target in range(1, max(freq) + 1):
+        dp = [0] * 27
+    for i in range(25, -1, -1):
+        dp[i] = min(freq[i], abs(freq[i] - target)) + dp[i + 1]
+        if i < 25 and freq[i + 1] < target:
+            next_deficit = target - freq[i + 1]
+            movable = freq[i] if freq[i] <= target else freq[i] - target
+            dp[i] = min(dp[i], max(next_deficit, movable) + dp[i + 2])
+        answer = min(answer, dp[0])
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(26 · max_frequency). |
+| **Space** | O(26). |
+| **vs main** | Enumerates bounded targets and models adjacent relabeling instead of using an insert/delete-only heuristic. |
+
 ### What to say
 "I'd explain that the real problem needs DP over frequency distributions. As a sketch, I enumerate target frequencies and sum insert/delete costs — honest about this being a heuristic unless we build the full state machine."
 
@@ -2246,6 +3342,35 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) init; O(log n) per pick |
 | **Space** | O(n) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Prefix roulette**
+
+- Map each weight to an interval in a prefix sum, draw one integer uniformly, then use `bisect_left` to locate its interval.
+- Use it when picks are frequent and weights stay fixed between picks.
+
+```python
+from bisect import bisect_left
+from random import randint
+
+class Solution:
+    def __init__(self, w):
+        self.prefix = []
+        total = 0
+        for weight in w:
+            total += weight
+            self.prefix.append(total)
+    def pickIndex(self):
+        return bisect_left(self.prefix, randint(1, self.prefix[-1]))
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n) setup, O(log n) per pick. |
+| **Space** | O(n). |
+| **vs main** | Makes each weighted sample logarithmic instead of scanning all weights. |
 
 ### What to say
 "I prefix-sum the weights into ranges and binary search a random draw — classic weighted roulette selection."
@@ -2298,6 +3423,35 @@ class HitCounter:
 | **Time** | O(1) hit; O(300) getHits |
 | **Space** | O(300) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Fixed 300-second ring**
+
+- Reuse slots by `timestamp % 300`, resetting a slot whenever its stored timestamp is stale.
+- Use it because the time window is fixed; for arbitrary windows, use a deque of timestamp counts.
+
+```python
+class HitCounter:
+    def __init__(self):
+        self.time = [0] * 300
+        self.count = [0] * 300
+    def hit(self, timestamp):
+        i = timestamp % 300
+        if self.time[i] != timestamp:
+            self.time[i], self.count[i] = timestamp, 0
+        self.count[i] += 1
+    def getHits(self, timestamp):
+        return sum(c for t, c in zip(self.time, self.count)
+                   if timestamp - t < 300)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(1) hit and O(300)=O(1) query. |
+| **Space** | O(300)=O(1). |
+| **vs main** | Bounds memory independently of the number of hits. |
+
 ### What to say
 "Only the last 300 seconds matter, so I keep a ring buffer indexed by `timestamp % 300` and sum valid buckets on query."
 
@@ -2337,6 +3491,32 @@ class Solution:
 |:---|:---|
 | **Time** | O(k log n) |
 | **Space** | O(n) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Negated max heap**
+
+- Each operation has the greatest payoff on the current largest pile, so repeatedly pop and reinsert that pile through a max heap.
+- Use it when `k` is much smaller than sorting after every operation.
+
+```python
+import heapq
+
+def minStoneSum(piles, k):
+    heap = [-pile for pile in piles]
+    heapq.heapify(heap)
+    for _ in range(k):
+        pile = -heapq.heappop(heap)
+        heapq.heappush(heap, -(pile - pile // 2))
+    return -sum(heap)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n + k log n). |
+| **Space** | O(n). |
+| **vs main** | Avoids O(k n log n) repeated full sorting. |
 
 ### What to say
 "Each operation should hit the current largest pile. A max-heap makes that easy — pop, halve with ceiling, push back."
@@ -2381,6 +3561,32 @@ class Solution:
 |:---|:---|
 | **Time** | O(L) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Fixed pointer gap**
+
+- Advance `fast` by `n+1`, then move both pointers until `fast` ends; `slow.next` is exactly the node to remove.
+- Use a dummy node so deleting the head needs no special case.
+
+```python
+def removeNthFromEnd(head, n):
+    dummy = ListNode(0, head)
+    slow = fast = dummy
+    for _ in range(n + 1):
+        fast = fast.next
+    while fast:
+        slow, fast = slow.next, fast.next
+    slow.next = slow.next.next
+    return dummy.next
+```
+
+| | |
+|:---|:---|
+| **Time** | O(length). |
+| **Space** | O(1). |
+| **vs main** | Uses one pass instead of first measuring the list length. |
 
 ### What to say
 "I offset fast by n nodes so when fast hits the end, slow sits just before the node to remove."
@@ -2427,6 +3633,33 @@ class Solution:
 | **Time** | O(n) |
 | **Space** | O(n) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Canonical component stack**
+
+- Ignore empty and `.` components, pop for `..`, and push ordinary directory names.
+- Use split components rather than character parsing; repeated slashes then disappear naturally.
+
+```python
+def simplifyPath(path):
+    stack = []
+    for part in path.split("/"):
+        if not part or part == ".":
+            continue
+        if part == "..":
+            if stack: stack.pop()
+        else:
+            stack.append(part)
+    return "/" + "/".join(stack)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(n). |
+| **vs main** | Normalizes the path in one pass without repeated string rewrites. |
+
 ### What to say
 "Split on slashes and simulate cd with a stack — pop on parent directory, skip current and empty segments."
 
@@ -2470,6 +3703,34 @@ class Solution:
 |:---|:---|
 | **Time** | O(n + q) |
 | **Space** | O(n) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Difference coverage**
+
+- Mark each range with `+1` at its start and `-1` after its end; one prefix sum gives total available decrements per index.
+- Use it when every query contributes uniformly across a range and query order does not matter.
+
+```python
+def isZeroArray(nums, queries):
+    diff = [0] * (len(nums) + 1)
+    for left, right in queries:
+        diff[left] += 1
+        diff[right + 1] -= 1
+    available = 0
+    for i, need in enumerate(nums):
+        available += diff[i]
+        if available < need:
+            return False
+    return True
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n + q). |
+| **Space** | O(n). |
+| **vs main** | Improves direct O(nq) range application to one query pass plus one prefix pass. |
 
 ### What to say
 "Range increments are applied with a difference array; one prefix pass tells how many times each index was covered."
@@ -2515,6 +3776,29 @@ class Solution:
 |:---|:---|
 | **Time** | O(log x) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Integer Newton iteration**
+
+- Newton's update `(r + x//r)//2` rapidly converges from above while staying in integer arithmetic.
+- Use it as the numerical alternative to binary search; stop when the next estimate no longer decreases.
+
+```python
+def mySqrt(x):
+    if x < 2: return x
+    r = x
+    while r > x // r:
+        r = (r + x // r) // 2
+    return r
+```
+
+| | |
+|:---|:---|
+| **Time** | O(log log x) iterations for fixed-width integers. |
+| **Space** | O(1). |
+| **vs main** | Converges faster in practice than O(log x) binary search while avoiding floats. |
 
 ### What to say
 "I binary search the largest integer whose square is at most x — standard integer sqrt template."
@@ -2574,6 +3858,41 @@ class Solution:
 | **Time** | O(n) |
 | **Space** | O(n) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Undirected tree BFS**
+
+- Build parent pointers once, then treat left, right, and parent as neighbors in a BFS from the target.
+- Use it because downward-only tree traversal cannot reach cousins through ancestors.
+
+```python
+from collections import deque
+
+def distanceK(root, target, k):
+    parent = {}
+    def link(node, par=None):
+        if not node: return
+        parent[node] = par
+        link(node.left, node); link(node.right, node)
+    link(root)
+    q, seen = deque([(target, 0)]), {target}
+    answer = []
+    while q:
+        node, dist = q.popleft()
+        if dist == k: answer.append(node.val); continue
+        for nxt in (node.left, node.right, parent[node]):
+            if nxt and nxt not in seen:
+                seen.add(nxt); q.append((nxt, dist + 1))
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(n). |
+| **vs main** | Turns the tree into an implicit graph and stops expanding at distance k. |
+
 ### What to say
 "I add parent pointers, then BFS outward from target like an undirected graph until depth k."
 
@@ -2616,6 +3935,33 @@ class Solution:
 |:---|:---|
 | **Time** | O(sqrt n log sqrt n) for sort |
 | **Space** | O(sqrt n) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Paired square-root factors**
+
+- Each divisor below `sqrt(n)` contributes a paired divisor above it; collect small factors and reverse the large half.
+- Use it when k may be far smaller than n but factor order must remain increasing.
+
+```python
+def kthFactor(n, k):
+    small, large = [], []
+    d = 1
+    while d * d <= n:
+        if n % d == 0:
+            small.append(d)
+            if d * d != n: large.append(n // d)
+        d += 1
+    factors = small + large[::-1]
+    return factors[k - 1] if k <= len(factors) else -1
+```
+
+| | |
+|:---|:---|
+| **Time** | O(sqrt(n)). |
+| **Space** | O(number of factors). |
+| **vs main** | Improves a scan through n to a square-root factor enumeration. |
 
 ### What to say
 "I enumerate divisors up to sqrt(n), pairing i with n/i, sort, and pick the kth."
@@ -2661,6 +4007,34 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) |
 | **Space** | O(min(n, k)) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Earliest prefix remainder**
+
+- Equal prefix sums modulo `k` enclose a subarray divisible by `k`; retain the earliest index to maximize length.
+- Initialize remainder 0 at index -1 and require an index gap of at least two.
+
+```python
+def checkSubarraySum(nums, k):
+    first = {0: -1}
+    prefix = 0
+    for i, x in enumerate(nums):
+        prefix += x
+        rem = prefix % k if k else prefix
+        if rem in first:
+            if i - first[rem] >= 2: return True
+        else:
+            first[rem] = i
+    return False
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n) expected. |
+| **Space** | O(min(n, |k|)) for nonzero k. |
+| **vs main** | Replaces checking all O(n²) subarrays with one modular prefix pass. |
 
 ### What to say
 "Equal prefix remainders mod k mean the subarray between them sums to a multiple of k. I store the first index of each remainder."
@@ -2715,6 +4089,33 @@ class Solution:
 | **Time** | O(n * k) |
 | **Space** | O(k) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Unlimited-transactions shortcut**
+
+- When `k >= n//2`, transaction limits cannot bind, so sum every positive day-to-day increase.
+- Check this branch before allocating O(k) DP; otherwise use rolling buy/sell states.
+
+```python
+def maxProfit(k, prices):
+    if k >= len(prices) // 2:
+        return sum(max(0, b - a) for a, b in zip(prices, prices[1:]))
+    buy = [float("-inf")] * (k + 1)
+    sell = [0] * (k + 1)
+    for price in prices:
+        for t in range(1, k + 1):
+            buy[t] = max(buy[t], sell[t - 1] - price)
+            sell[t] = max(sell[t], buy[t] + price)
+    return sell[k]
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n) in the unlimited case; otherwise O(nk). |
+| **Space** | O(k), or O(1) for the shortcut. |
+| **vs main** | Avoids wasteful O(nk) DP when k is effectively unlimited. |
+
 ### What to say
 "I DP over number of completed transactions. Two arrays track best profit holding vs not holding; if k is large enough it becomes unlimited-transaction greedy."
 
@@ -2761,6 +4162,32 @@ class Solution:
 |:---|:---|
 | **Time** | O(n²) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Expand around centers**
+
+- Every palindrome has one of `2n-1` odd/even centers; expand while the mirrored characters match.
+- Use it when only the count is needed and no O(n²) palindrome table must be retained.
+
+```python
+def countSubstrings(s):
+    answer = 0
+    for center in range(2 * len(s) - 1):
+        left = center // 2
+        right = left + center % 2
+        while left >= 0 and right < len(s) and s[left] == s[right]:
+            answer += 1
+            left -= 1; right += 1
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n²). |
+| **Space** | O(1). |
+| **vs main** | Keeps DP's time bound but removes its O(n²) table. |
 
 ### What to say
 "Every palindrome has a center. I expand outward for odd and even lengths and count valid expansions."
@@ -2813,6 +4240,34 @@ class Solution:
 | **Time** | O(4^n / sqrt(n)) Catalan structures |
 | **Space** | O(n) recursion |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Valid-prefix generation**
+
+- Add `(` only while fewer than n are open and add `)` only while closes are fewer than opens.
+- Use it to generate only valid prefixes instead of producing all 2^(2n) strings and filtering.
+
+```python
+def generateParenthesis(n):
+    answer = []
+    def build(path, opened, closed):
+        if len(path) == 2 * n:
+            answer.append(path); return
+        if opened < n:
+            build(path + "(", opened + 1, closed)
+        if closed < opened:
+            build(path + ")", opened, closed + 1)
+    build("", 0, 0)
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(Cn · n), proportional to Catalan-sized output. |
+| **Space** | O(n) recursion excluding output. |
+| **vs main** | Prunes every prefix that can never become balanced. |
+
 ### What to say
 "I backtrack adding opens while under n and closes while closes < opens — only valid strings get built."
 
@@ -2855,6 +4310,32 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Move the shorter wall**
+
+- Area is limited by the shorter wall, so moving the taller wall inward cannot improve that pair; discard the shorter side.
+- Use the dominance proof to justify two pointers rather than checking all pairs.
+
+```python
+def maxArea(height):
+    left, right, answer = 0, len(height) - 1, 0
+    while left < right:
+        answer = max(answer, (right - left) * min(height[left], height[right]))
+        if height[left] <= height[right]:
+            left += 1
+        else:
+            right -= 1
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(1). |
+| **vs main** | Improves brute-force O(n²) pair enumeration to one pass. |
 
 ### What to say
 "I two-pointer from both ends and always discard the shorter wall — width shrinks but height can only rise if we move the short side."
@@ -2910,6 +4391,36 @@ class Solution:
 | **Time** | O(mn) |
 | **Space** | O(1) extra |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Shrinking boundaries**
+
+- Maintain top, bottom, left, and right bounds; after traversing one edge, shrink it and guard the remaining reverse edges.
+- Use it to avoid a visited matrix; boundary checks handle single remaining rows or columns.
+
+```python
+def spiralOrder(matrix):
+    out = []
+    top, bottom, left, right = 0, len(matrix)-1, 0, len(matrix[0])-1
+    while top <= bottom and left <= right:
+        out += matrix[top][left:right+1]; top += 1
+        for r in range(top, bottom+1): out.append(matrix[r][right])
+        right -= 1
+        if top <= bottom:
+            out += matrix[bottom][left:right+1][::-1]; bottom -= 1
+        if left <= right:
+            for r in range(bottom, top-1, -1): out.append(matrix[r][left])
+            left += 1
+    return out
+```
+
+| | |
+|:---|:---|
+| **Time** | O(rows · cols). |
+| **Space** | O(1) auxiliary beyond output. |
+| **vs main** | Eliminates visited-state storage. |
+
 ### What to say
 "I peel the matrix layer by layer, shrinking top/bottom/left/right after each side."
 
@@ -2952,6 +4463,31 @@ class Solution:
 |:---|:---|
 | **Time** | O(n) |
 | **Space** | O(1) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Deficit reset**
+
+- If the running tank becomes negative at i, no station since the current start can reach i+1, so reset the candidate to i+1.
+- First verify total gas covers total cost; that condition guarantees the final candidate succeeds.
+
+```python
+def canCompleteCircuit(gas, cost):
+    total = tank = start = 0
+    for i, (gain, spend) in enumerate(zip(gas, cost)):
+        delta = gain - spend
+        total += delta; tank += delta
+        if tank < 0:
+            start, tank = i + 1, 0
+    return start if total >= 0 else -1
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(1). |
+| **vs main** | Replaces trying every start in O(n²) with one greedy elimination pass. |
 
 ### What to say
 "If total gas covers total cost, a unique start exists. I track running surplus and restart candidate start whenever tank goes negative."
@@ -3001,6 +4537,36 @@ class ZigzagIterator:
 | **Time** | O(1) amortized per next |
 | **Space** | O(k) vectors |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Queue active indices**
+
+- Queue `(vector, index)` states; after yielding one item, requeue only if that vector still has another item.
+- Use it to generalize naturally from two vectors to any number of iterables.
+
+```python
+from collections import deque
+
+class ZigzagIterator:
+    def __init__(self, v1, v2):
+        self.q = deque((v, 0) for v in (v1, v2) if v)
+    def next(self):
+        vector, i = self.q.popleft()
+        value = vector[i]
+        if i + 1 < len(vector):
+            self.q.append((vector, i + 1))
+        return value
+    def hasNext(self):
+        return bool(self.q)
+```
+
+| | |
+|:---|:---|
+| **Time** | O(1) per item. |
+| **Space** | O(number of active vectors). |
+| **vs main** | Avoids empty-vector special cases and supports k-way zigzag iteration. |
+
 ### What to say
 "I keep a queue of (vector, index) pairs and rotate after each output — simple round-robin zigzag."
 
@@ -3042,6 +4608,32 @@ class Solution:
 | **Time** | O(n) |
 | **Space** | O(n) |
 
+
+### Alternate — complexity trick
+
+**Trick:** **Flush full buckets**
+
+- Accumulate indices by required size and emit a group immediately when that size's bucket fills.
+- Use it because every bucket is guaranteed to partition exactly under the problem constraints.
+
+```python
+def groupThePeople(groupSizes):
+    buckets, answer = {}, []
+    for person, size in enumerate(groupSizes):
+        bucket = buckets.setdefault(size, [])
+        bucket.append(person)
+        if len(bucket) == size:
+            answer.append(bucket[:])
+            bucket.clear()
+    return answer
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n). |
+| **Space** | O(n) including output; at most unfinished bucket storage beyond it. |
+| **vs main** | Builds valid groups online without sorting people by size. |
+
 ### What to say
 "I bucket people by required group size and flush a group whenever the bucket is full."
 
@@ -3076,6 +4668,36 @@ class Solution:
 |:---|:---|
 | **Time** | O(N log N) for sort; O(N log k) with heap |
 | **Space** | O(N) |
+
+
+### Alternate — complexity trick
+
+**Trick:** **Size-k reverse heap**
+
+- Keep only k candidates; encode lexical ties in a reversed string wrapper so the least desirable top-k word is evicted.
+- Use a heap when k is much smaller than the number of distinct words; full sorting is simpler when k is large.
+
+```python
+from collections import Counter
+import heapq
+
+class Rev(str):
+    def __lt__(self, other):
+        return str.__gt__(self, other)
+
+def topKFrequent(words, k):
+    heap = []
+    for word, freq in Counter(words).items():
+        heapq.heappush(heap, (freq, Rev(word), word))
+        if len(heap) > k: heapq.heappop(heap)
+    return [item[2] for item in sorted(heap, key=lambda x: (-x[0], x[2]))]
+```
+
+| | |
+|:---|:---|
+| **Time** | O(n + u log k + k log k). |
+| **Space** | O(u) counts plus O(k) heap. |
+| **vs main** | Reduces ranking from O(u log u) full sort to O(u log k). |
 
 ### What to say
 "Count frequencies, then sort with key negative frequency and alphabetical word for tie-breaks, and slice top k."
