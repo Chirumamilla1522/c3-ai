@@ -98,6 +98,21 @@ While drawing say: “I will earn each design layer in this order and pause for 
 - Actors: driver, operator
 - Critical path: entry → park → exit
 
+**Draw now:** the actors and driver journey.
+
+```mermaid
+flowchart LR
+  Driver --> Entry[Entry gate]
+  Entry --> Assign[Spot assignment]
+  Assign --> Park[Park]
+  Park --> Checkout[Checkout]
+  Checkout --> Exit[Exit gate]
+  Operator --> Config[Spot and pricing config]
+  Config --> Assign
+```
+
+While drawing say: “The driver owns the critical journey; operator configuration stays off that synchronous path.”
+
 ### Beat 3 — Clarify assignment
 
 **You (ask / say / draw):** “Does the system assign an exact spot at entry, or only admit by zone and let the driver choose?”
@@ -160,6 +175,20 @@ While drawing say: “I will earn each design layer in this order and pause for 
 - Entry p95 < 150 ms
 - Strong assignment; ≤5 s stale signage
 
+**Draw now:** the NFR board and consistency boundary.
+
+```mermaid
+flowchart LR
+  Gate[Entry request] --> Claim[Authoritative spot claim]
+  Claim --> Fast["p95 under 150 ms"]
+  Claim --> Strong[Strong consistency]
+  Claim --> Projection[Signage projection]
+  Projection --> Stale["Up to 5 s stale"]
+  Claim --> Available["99.9 percent available"]
+```
+
+While drawing say: “Latency cannot weaken the one-spot claim; only the derived signage is allowed to lag.”
+
 ### Beat 8 — Estimate modest scale
 
 **You (ask / say / draw):** “For one garage, may I assume 10,000 spots and 20 entry or exit requests per second at peak?”
@@ -185,6 +214,26 @@ While drawing say: “I will earn each design layer in this order and pause for 
 **Board now:**
 - Lot 1→N Spot
 - Spot has type, location, status, version
+
+**Draw now:** the first partial parking ERD.
+
+```mermaid
+erDiagram
+  LOT ||--o{ SPOT : contains
+  LOT {
+    uuid lot_id PK
+    string name
+  }
+  SPOT {
+    uuid spot_id PK
+    uuid lot_id FK
+    string type
+    string status
+    int version
+  }
+```
+
+While drawing say: “This is intentionally incomplete: Spot is already the lockable scarcity boundary.”
 
 ### Beat 10 — Add vehicle
 
@@ -213,6 +262,30 @@ While drawing say: “I will earn each design layer in this order and pause for 
 **Board now:**
 - Session states: ACTIVE, PAYMENT_PENDING, CLOSED, VOID
 - Spot and active session change together
+
+**Draw now:** the evolving ERD after adding the stay lifecycle.
+
+```mermaid
+erDiagram
+  LOT ||--o{ SPOT : contains
+  LOT ||--o{ PARKING_SESSION : records
+  SPOT ||--o{ PARKING_SESSION : hosts
+  VEHICLE ||--o{ PARKING_SESSION : enters
+  PARKING_SESSION {
+    uuid session_id PK
+    uuid spot_id FK
+    uuid vehicle_id FK
+    string status
+    timestamp entered_at
+  }
+  VEHICLE {
+    uuid vehicle_id PK
+    string plate_token
+    string type
+  }
+```
+
+While drawing say: “Session is historical truth, while Spot remains the current claim point.”
 
 ### Beat 12 — Correct a weak model
 
@@ -275,6 +348,21 @@ While drawing say: “The mutable scarcity boundary is one Spot; Session preserv
 - Compatibility(vehicle_type, spot_type, rank)
 - Candidate query ordered by rank and walking distance
 
+**Draw now:** the compatibility ranking decision.
+
+```mermaid
+flowchart TD
+  Vehicle[Vehicle type] --> Policy[Compatibility rows]
+  Policy --> Exact[Exact-fit candidates]
+  Policy --> Flexible[Flexible larger candidates]
+  Exact --> Rank[Rank by fit then distance]
+  Flexible --> Rank
+  Rank --> Lock[Try authoritative row lock]
+  Lock --> Assigned[Assigned spot]
+```
+
+While drawing say: “Ranking preserves flexible inventory, but the final row lock—not the ranking result—owns the assignment.”
+
 ### Beat 15 — First API only
 
 **Interviewer:** Give me the entry API.
@@ -293,6 +381,22 @@ While drawing say: “The mutable scarcity boundary is one Spot; Session preserv
 - Create-session command
 - 201, 409, idempotent replay
 
+**Draw now:** the entry API sequence.
+
+```mermaid
+sequenceDiagram
+  participant G as Entry Gate
+  participant A as Session API
+  participant D as Parking DB
+  G->>A: create session with idempotency key
+  A->>D: find and lock ranked spot
+  A->>D: insert session and occupy spot
+  D-->>A: commit
+  A-->>G: session and directions
+```
+
+While drawing say: “The response is produced by the same transaction that spends the spot.”
+
 ### Beat 16 — Retry challenge
 
 **Interviewer:** The gate times out and retries. What happens?
@@ -306,6 +410,24 @@ While drawing say: “The mutable scarcity boundary is one Spot; Session preserv
 **Board now:**
 - Unique `(lot_id, idempotency_key)`
 - Replay or 202 while in progress
+
+**Draw now:** the gate timeout and retry sequence.
+
+```mermaid
+sequenceDiagram
+  participant G as Gate
+  participant A as Session API
+  participant D as Parking DB
+  G->>A: create session key K
+  A->>D: reserve key K and assign
+  G--xA: response times out
+  G->>A: retry key K
+  A->>D: read key K
+  D-->>A: original result or in progress
+  A-->>G: replay result or 202
+```
+
+While drawing say: “A retry observes the first operation; it never starts a second allocation.”
 
 ### Beat 17 — Exit API
 
@@ -334,6 +456,32 @@ While drawing say: “The mutable scarcity boundary is one Spot; Session preserv
 **Board now:**
 - Versioned RatePlan
 - PaymentAttempt states and provider reference
+
+**Draw now:** the payment entities added to the parking model.
+
+```mermaid
+erDiagram
+  PARKING_SESSION ||--o{ PAYMENT_ATTEMPT : charges
+  RATE_PLAN ||--o{ PARKING_SESSION : prices
+  PARKING_SESSION {
+    uuid session_id PK
+    uuid rate_plan_id FK
+    string status
+  }
+  RATE_PLAN {
+    uuid rate_plan_id PK
+    int version
+    timestamp effective_at
+  }
+  PAYMENT_ATTEMPT {
+    uuid payment_id PK
+    uuid session_id FK
+    string provider_ref
+    string status
+  }
+```
+
+While drawing say: “Immutable rate versions reproduce the quote, and each provider interaction gets its own durable attempt.”
 
 ### Beat 19 — Two users claim the last EV spot
 
@@ -407,6 +555,25 @@ While drawing say: “The loser does not trust its old read; it performs a fresh
 - Webhook + reconciliation
 - Provider-side idempotency
 
+**Draw now:** payment crash recovery with an outbox.
+
+```mermaid
+sequenceDiagram
+  participant S as Session Service
+  participant P as Payment Provider
+  participant D as Parking DB
+  participant R as Reconciler
+  S->>P: charge with stable key
+  P-->>S: settled
+  S->>D: record settlement and outbox
+  S--xD: crash before close
+  P->>D: webhook records settlement
+  R->>D: find settled unclosed session
+  R->>D: close session and emit outbox
+```
+
+While drawing say: “Provider idempotency prevents double charge, while webhook and reconciliation complete our interrupted transition.”
+
 ### Beat 23 — Draw the state machine
 
 **Draw now:** session and payment-aware transitions.
@@ -432,6 +599,21 @@ While drawing say: “Only conditional transitions are legal; stale commands rec
 - Explicit legal transitions
 - Sensors do not silently rewrite truth
 
+**Draw now:** the expiry and reconciliation worker boundary.
+
+```mermaid
+flowchart LR
+  Clock[Periodic worker] --> Scan[Scan stale operations]
+  Scan --> Pending[Payment pending too long]
+  Scan --> Dedup[Expired dedupe records]
+  Pending --> Provider[Confirm provider state]
+  Provider --> Close[Close paid session]
+  Provider --> Restore[Return declined session to active]
+  Dedup --> Purge[Purge after retry horizon]
+```
+
+While drawing say: “Drive-up sessions do not expire; only stale operations and bounded idempotency records do.”
+
 ### Beat 24 — Ten-times traffic
 
 **Interviewer:** Now 1,000 garages and ten times traffic.
@@ -445,6 +627,23 @@ While drawing say: “Only conditional transitions are legal; stale commands rec
 **Board now:**
 - Partition key: lot_id
 - Local writes; derived global reporting
+
+**Draw now:** lot-based sharding at scale.
+
+```mermaid
+flowchart LR
+  Router[Lot-aware router] --> S1[Lot shard A]
+  Router --> S2[Lot shard B]
+  Router --> S3[Lot shard C]
+  S1 --> E1[Outbox events]
+  S2 --> E2[Outbox events]
+  S3 --> E3[Outbox events]
+  E1 --> Global[Global reporting]
+  E2 --> Global
+  E3 --> Global
+```
+
+While drawing say: “Every garage has one write home, while global views are derived from shard events.”
 
 ### Beat 25 — Earn the final architecture and close
 
@@ -495,6 +694,20 @@ While drawing say: “Postgres owns spot and session state; projections may lag;
 - Journey: search → reserve → pickup → return
 - Reservation targets class, not VIN
 
+**Draw now:** the customer journey and promise boundary.
+
+```mermaid
+flowchart LR
+  Customer --> Search
+  Search --> Reserve[Reserve class]
+  Reserve --> Assign[Assign vehicle]
+  Assign --> Pickup
+  Pickup --> Return
+  BranchOps[Branch operations] --> Assign
+```
+
+While drawing say: “The reservation promises a class first; a VIN enters only near pickup.”
+
 ### Beat 2 — Clarify geography
 
 **You (ask / say / draw):** “Can pickup and return locations differ?”
@@ -542,6 +755,20 @@ While drawing say: “Postgres owns spot and session state; projections may lag;
 **Board now:**
 - Search: fast, stale ≤10 s
 - Booking: strong and revalidated
+
+**Draw now:** the car-rental NFR split.
+
+```mermaid
+flowchart LR
+  Client --> Search[Search path]
+  Client --> Booking[Booking path]
+  Search --> Index["Derived index, up to 10 s stale"]
+  Booking --> Inventory[Authoritative inventory]
+  Index -. advisory result .-> Booking
+  Booking --> Strong[Strong revalidation]
+```
+
+While drawing say: “Search optimizes discovery, but only booking can spend inventory.”
 
 ### Beat 6 — Capacity
 
@@ -592,6 +819,19 @@ While drawing say: “Postgres owns spot and session state; projections may lag;
 **Board now:**
 - Corrected: InventoryDay(branch, class, date)
 - Capacity and reserved_count
+
+**Draw now:** the inventory-model correction.
+
+```mermaid
+flowchart LR
+  Request[Date-range request] --> Old[Count fleet minus overlaps]
+  Old --> Problem[Wide scans and lock contention]
+  Problem --> Buckets[InventoryDay buckets]
+  Buckets --> Ordered[Lock dates in order]
+  Ordered --> Atomic[Atomic range promise]
+```
+
+While drawing say: “Daily buckets turn an expensive overlap calculation into finite, ordered claims.”
 
 ### Beat 10 — Draw the model
 
@@ -649,6 +889,23 @@ While drawing say: “InventoryDay protects promises; Vehicle represents operati
 **Board now:**
 - Create reservation command
 - Idempotency and explicit errors
+
+**Draw now:** the booking API decision path.
+
+```mermaid
+sequenceDiagram
+  participant C as Customer
+  participant R as Reservation API
+  participant Q as Quote Service
+  participant D as Inventory DB
+  C->>R: create reservation with quote token
+  R->>Q: validate frozen pricing inputs
+  R->>D: lock and spend date buckets
+  D-->>R: committed or sold out
+  R-->>C: confirmed or conflict
+```
+
+While drawing say: “A valid quote freezes price inputs, not availability; inventory is rechecked at commit.”
 
 ### Beat 13 — Range concurrency
 
@@ -732,6 +989,21 @@ While drawing say: “Search is advisory; only this transaction spends inventory
 - Durable pickup operation
 - Reconcile external settlement
 
+**Draw now:** pickup payment crash recovery.
+
+```mermaid
+stateDiagram-v2
+  [*] --> RESERVED
+  RESERVED --> PICKUP_PENDING: agent starts pickup
+  PICKUP_PENDING --> PAID: provider confirms
+  PAID --> RENTED: vehicle handoff committed
+  PICKUP_PENDING --> RESERVED: payment declined
+  PAID --> REFUND_PENDING: handoff cannot complete
+  REFUND_PENDING --> RESERVED: refund confirmed
+```
+
+While drawing say: “The durable pickup operation makes ambiguous payment a resumable state, not an improvised retry.”
+
 ### Beat 18 — Scale search
 
 **Interviewer:** Search is now 10x.
@@ -745,6 +1017,21 @@ While drawing say: “Search is advisory; only this transaction spends inventory
 **Board now:**
 - Regional search projection
 - Strong write path unchanged
+
+**Draw now:** regional search scaling without weakening booking.
+
+```mermaid
+flowchart LR
+  Events[Inventory events] --> R1[Region A index]
+  Events --> R2[Region B index]
+  UsersA[Region A users] --> R1
+  UsersB[Region B users] --> R2
+  R1 --> Book[Booking service]
+  R2 --> Book
+  Book --> Home[Inventory home shard]
+```
+
+While drawing say: “Indexes scale independently by region, while every confirmation returns to the inventory home shard.”
 
 ### Beat 19 — Draw earned architecture
 
@@ -799,6 +1086,21 @@ While drawing say: “The index answers discovery; InventoryDay spends promises;
 - v1: dashboards + alerts
 - 13-month aggregate retention
 
+**Draw now:** the metrics actors and data journey.
+
+```mermaid
+flowchart LR
+  Agent[Metric agents] --> Ingest
+  Ingest --> Store[Raw and rollup storage]
+  Store --> Dashboard
+  Ingest --> Alert[Alert evaluation]
+  Alert --> OnCall[On-call user]
+  Admin[Tenant admin] --> Quota[Series quotas]
+  Quota --> Ingest
+```
+
+While drawing say: “Agents produce, dashboards query, and alerting consumes the same durable stream under tenant controls.”
+
 ### Beat 2 — Clarify input
 
 **You (ask / say / draw):** “Are inputs counters, gauges, and histograms with labels?”
@@ -847,6 +1149,19 @@ While drawing say: “The index answers discovery; InventoryDay spends promises;
 - 2M points/s
 - Alerts <5 s; dashboards <15 s
 
+**Draw now:** the metrics NFR lanes.
+
+```mermaid
+flowchart LR
+  Batch[Accepted batch] --> Durable["ACK under 250 ms"]
+  Durable --> Alert["Alert freshness under 5 s"]
+  Durable --> Dash["Dashboard freshness under 15 s"]
+  Durable --> Retain["13-month aggregates"]
+  Durable --> NoLoss[No acknowledged loss]
+```
+
+While drawing say: “The durable append is shared, but alerting and dashboard freshness have different deadlines.”
+
 ### Beat 6 — Capacity arithmetic
 
 **You (ask / say / draw):** “At 2M points/s and roughly 30 compressed bytes, raw flow is about 60 MB/s or 5 TB/day before replication.”
@@ -886,6 +1201,24 @@ While drawing say: “The index answers discovery; InventoryDay spends promises;
 **Board now:**
 - Batch write API
 - ACK boundary: durable append
+
+**Draw now:** the ingest API acknowledgment sequence.
+
+```mermaid
+sequenceDiagram
+  participant A as Agent
+  participant E as Ingest Edge
+  participant Q as Quota and Schema
+  participant L as Durable Log
+  A->>E: compressed batch and batch ID
+  E->>Q: validate tenant and series
+  Q-->>E: accepted
+  E->>L: append partition record
+  L-->>E: durable offset
+  E-->>A: 202 accepted
+```
+
+While drawing say: “The client hears success only after a replayable record exists.”
 
 ### Beat 9 — Retry semantics
 
@@ -952,6 +1285,20 @@ While drawing say: “The log is the replay boundary; consumers can fail indepen
 - Event time + watermark
 - Correction version
 
+**Draw now:** late-data window correction.
+
+```mermaid
+flowchart LR
+  Point[Late point] --> Window{"Within lateness policy"}
+  Window -->|yes| Reopen[Update recent window]
+  Reopen --> Version[Emit correction version]
+  Version --> Query[Queries read latest version]
+  Window -->|no| Raw[Store raw only]
+  Raw --> Audit[Late-data metric]
+```
+
+While drawing say: “Event-time correctness is bounded explicitly; very late points remain auditable without rewriting alerts.”
+
 ### Beat 13 — Aggregation model
 
 **Interviewer:** What do you store?
@@ -1017,6 +1364,21 @@ While drawing say: “Metadata expansion is bounded; workers enforce time and sa
 **Board now:**
 - Corrected: specialized sample store
 - Relational metadata only
+
+**Draw now:** the corrected storage tiers.
+
+```mermaid
+flowchart LR
+  Log[Durable log] --> Hot[Hot time-series chunks]
+  Hot --> Rollup[Minute and hour rollups]
+  Hot --> Cold[Cold object storage]
+  Catalog[(Relational metadata)] --> Hot
+  Catalog --> Cold
+  Query[Query planner] --> Hot
+  Query --> Cold
+```
+
+While drawing say: “Relational storage catalogs series; compressed columnar chunks carry the sample volume.”
 
 ### Beat 17 — Backpressure
 
@@ -1088,6 +1450,20 @@ While drawing say: “Metadata expansion is bounded; workers enforce time and sa
 - Immutable text
 - Optional expiry
 
+**Draw now:** the initial paste lifecycle.
+
+```mermaid
+flowchart LR
+  Creator --> Create
+  Create --> Live[Immutable live paste]
+  Reader --> Live
+  Live --> Expired[Expired]
+  Owner --> Deleted[Deleted]
+  Live --> Deleted
+```
+
+While drawing say: “The object is immutable after publication; only lifecycle metadata changes.”
+
 ### Beat 2 — Clarify access
 
 **You (ask / say / draw):** “Public, unlisted, and private?”
@@ -1136,6 +1512,19 @@ While drawing say: “Metadata expansion is bounded; workers enforce time and sa
 - Read-heavy SLOs
 - Bounded delete propagation
 
+**Draw now:** the Pastebin NFR board.
+
+```mermaid
+flowchart LR
+  Create --> Durable[Durable acknowledged write]
+  Read --> Cached["Cached read under 100 ms"]
+  Read --> Available["99.99 percent available"]
+  Delete --> Purge["Propagation under 1 min"]
+  Durable --> Publish[Publish only complete content]
+```
+
+While drawing say: “Read availability is aggressive, while deletion has an explicit propagation bound.”
+
 ### Beat 6 — Capacity
 
 **You (ask / say / draw):** “Assume 10 million creates/day at 10 KB average: about 100 GB/day, while reads are 100:1 and bursty.”
@@ -1161,6 +1550,28 @@ While drawing say: “Metadata expansion is bounded; workers enforce time and sa
 **Board now:**
 - Paste metadata
 - Body object separated
+
+**Draw now:** the partial metadata and body model.
+
+```mermaid
+erDiagram
+  USER o|--o{ PASTE : owns
+  PASTE ||--|| BODY_OBJECT : references
+  PASTE {
+    string id PK
+    uuid owner_id FK
+    string visibility
+    timestamp expires_at
+    string status
+  }
+  BODY_OBJECT {
+    string object_key PK
+    string content_hash
+    int size_bytes
+  }
+```
+
+While drawing say: “Metadata decides visibility and lifecycle; object storage carries immutable bytes.”
 
 ### Beat 8 — ID generation
 
@@ -1199,6 +1610,20 @@ While drawing say: “Metadata expansion is bounded; workers enforce time and sa
 **Board now:**
 - Corrected publish protocol
 - No LIVE pointer to missing body
+
+**Draw now:** the corrected publish states.
+
+```mermaid
+stateDiagram-v2
+  [*] --> UPLOADING
+  UPLOADING --> VERIFIED: checksum matches
+  VERIFIED --> LIVE: metadata commits
+  UPLOADING --> ORPHANED: request abandoned
+  ORPHANED --> DELETED: sweeper
+  LIVE --> DELETED: owner or policy
+```
+
+While drawing say: “LIVE is reached only after durable bytes are verified, so readers never follow a broken pointer.”
 
 ### Beat 11 — Draw the write path
 
@@ -1307,6 +1732,23 @@ While drawing say: “The lock is short and local to a cache miss; it never beco
 - Logical expiry on read
 - Async physical deletion
 
+**Draw now:** logical expiry and physical cleanup.
+
+```mermaid
+sequenceDiagram
+  participant R as Reader
+  participant M as Metadata
+  participant W as Expiry Worker
+  participant O as Object Store
+  R->>M: read paste
+  M-->>R: expired response
+  W->>M: scan expiry bucket
+  W->>O: delete body
+  W->>M: mark body removed
+```
+
+While drawing say: “Read-time expiry provides correctness; the worker controls storage cost and may lag.”
+
 ### Beat 17 — Abuse
 
 **Interviewer:** What about malware or secrets?
@@ -1377,6 +1819,23 @@ While drawing say: “The lock is short and local to a cache miss; it never beco
 - Scope: dispatch + car controller
 - Out: physical safety implementation
 
+**Draw now:** the elevator actors and control boundary.
+
+```mermaid
+flowchart LR
+  Rider --> HallButton[Hall button]
+  Rider --> CarPanel[Car panel]
+  HallButton --> Dispatcher
+  Dispatcher --> Controller[Car controller]
+  CarPanel --> Controller
+  Controller --> Ports[Hardware ports]
+  Interlock[Safety interlock] --> Ports
+  Operator --> Mode[Operational mode]
+  Mode --> Dispatcher
+```
+
+While drawing say: “Software chooses assignments and commands, but hardware interlocks remain authoritative.”
+
 ### Beat 2 — Clarify topology
 
 **You (ask / say / draw):** “One building with multiple cars and floor call buttons?”
@@ -1424,6 +1883,20 @@ While drawing say: “The lock is short and local to a cache miss; it never beco
 **Board now:**
 - Command reaction <100 ms
 - p95 wait + starvation bound
+
+**Draw now:** the elevator NFR trade-off board.
+
+```mermaid
+flowchart LR
+  Request --> React["Command reaction under 100 ms"]
+  Request --> Wait[p95 wait]
+  Wait --> Fair[Starvation bound]
+  Safety[Safety interlock] --> Guard[Never bypass]
+  Guard --> Move[Movement command]
+  Fair --> Dispatch[Dispatch policy]
+```
+
+While drawing say: “Safety is a hard guard; dispatch balances tail wait against average efficiency.”
 
 ### Beat 6 — Begin classes
 
@@ -1527,6 +2000,22 @@ While drawing say: “Assignment and execution are separate ownership boundaries
 **Board now:**
 - Corrected single-writer per car
 - Commands, not shared mutation
+
+**Draw now:** the ownership correction.
+
+```mermaid
+sequenceDiagram
+  participant D as Dispatcher
+  participant C as Car Controller
+  participant P as Stop Plan
+  D->>C: assign stop command
+  C->>C: serialize in mailbox
+  C->>P: mutate owned stop plan
+  P-->>C: accepted order
+  C-->>D: assignment accepted
+```
+
+While drawing say: “Dispatcher proposes work, while each car is the single writer of its stop plan.”
 
 ### Beat 12 — Dispatch score
 
@@ -1633,6 +2122,21 @@ While drawing say: “Each car processes commands sequentially; hardware reports
 - Heartbeat fault handling
 - Safe request reassignment
 
+**Draw now:** car-failure recovery.
+
+```mermaid
+flowchart TD
+  Heartbeat[Heartbeat missing] --> Fault[Mark car out of service]
+  Fault --> Hall[Unserved hall calls]
+  Fault --> Inside[Inside-car requests]
+  Hall --> Requeue[Requeue safely]
+  Inside --> Human[Human safety procedure]
+  Requeue --> Other[Assign another eligible car]
+  Fault --> Alert[Alert operator]
+```
+
+While drawing say: “Only hall calls are automatically reassigned; passenger safety work is never hidden by software state.”
+
 ### Beat 18 — Fairness
 
 **Interviewer:** The top floor keeps waiting.
@@ -1713,6 +2217,19 @@ While drawing say: “Each car processes commands sequentially; hardware reports
 - Viral launch traffic
 - Strong hold path
 
+**Draw now:** ticketing discovery versus allocation.
+
+```mermaid
+flowchart LR
+  Fan --> Browse[Cached seat map]
+  Browse --> Hold[Create hold]
+  Hold --> DB[Authoritative EventSeat]
+  DB --> Timer[Five-minute expiry]
+  Hold --> Checkout
+```
+
+While drawing say: “Seat maps may lag, but hold creation always claims authoritative event-scoped inventory.”
+
 ### Beat 4 — Model gradually
 
 **You (ask / say / draw):** “Start Event and Seat, then `EventSeat(event_id, seat_id, status, hold_id, hold_expires, version)`.”
@@ -1783,6 +2300,23 @@ While drawing say: “Expiry is a legal transition guarded by hold ID and versio
 **Board now:**
 - Payment-pending state
 - Reconciled settlement
+
+**Draw now:** ticket payment crash recovery.
+
+```mermaid
+sequenceDiagram
+  participant B as Booking Service
+  participant P as Payment Provider
+  participant D as Event DB
+  participant R as Reconciler
+  B->>D: move hold to payment pending
+  B->>P: charge with stable key
+  P-->>B: ambiguous response
+  P->>R: settlement webhook
+  R->>D: confirm sale or release
+```
+
+While drawing say: “Payment pending protects the seat while settlement truth is reconciled.”
 
 ### Beat 9 — Hot event
 
@@ -1878,6 +2412,20 @@ While drawing say: “The waiting room shapes load; it does not allocate seats.�
 **Board now:**
 - Match SLO
 - Exclusive active driver
+
+**Draw now:** ride-sharing state separation.
+
+```mermaid
+flowchart LR
+  DriverApp --> Location[Ephemeral location]
+  Location --> Geo[Geo index]
+  RiderApp --> Trip[Durable trip]
+  Geo --> Matcher
+  Trip --> Matcher
+  Matcher --> DriverState[Durable driver claim]
+```
+
+While drawing say: “Location proposes candidates; durable driver state enforces exclusivity.”
 
 ### Beat 4 — Entities
 
@@ -1989,6 +2537,20 @@ While drawing say: “Realtime delivery may retry; trip transitions are idempote
 - Connectivity grace
 - Controlled reassignment
 
+**Draw now:** assignment loss and recovery.
+
+```mermaid
+stateDiagram-v2
+  [*] --> ASSIGNED
+  ASSIGNED --> DEGRADED: driver heartbeat lost
+  DEGRADED --> ASSIGNED: driver reconnects
+  DEGRADED --> REASSIGNING: grace expires
+  REASSIGNING --> ASSIGNED: new driver claimed
+  ASSIGNED --> IN_PROGRESS: pickup begins
+```
+
+While drawing say: “A grace state avoids creating two drivers for one rider during a brief network loss.”
+
 ### Beat 11 — Ten-times scale
 
 **Interviewer:** Ten cities, ten times traffic.
@@ -2052,6 +2614,20 @@ While drawing say: “Realtime delivery may retry; trip transitions are idempote
 **Board now:**
 - Durable chunks
 - Strong namespace mutation
+
+**Draw now:** Dropbox metadata and content ownership.
+
+```mermaid
+flowchart LR
+  Namespace[Namespace entry] --> Version[Current file version]
+  Version --> Manifest[Chunk manifest]
+  Manifest --> C1[Chunk A]
+  Manifest --> C2[Chunk B]
+  Rename[Folder rename] --> Namespace
+  Upload[New upload] --> Version
+```
+
+While drawing say: “Namespace mutations move pointers; immutable file versions and chunks preserve content history.”
 
 ### Beat 4 — Entities
 
@@ -2160,6 +2736,22 @@ While drawing say: “Object storage owns bytes; metadata owns reachability and 
 - ACL inheritance
 - Revocation propagation
 
+**Draw now:** sharing revocation propagation.
+
+```mermaid
+sequenceDiagram
+  participant O as Owner
+  participant M as Metadata Service
+  participant C as Policy Cache
+  participant R as Reader
+  O->>M: revoke folder access
+  M->>C: invalidate policy version
+  R->>M: request shared file
+  M-->>R: denied by new ACL
+```
+
+While drawing say: “Authoritative ACL changes first; cache invalidation then bounds stale authorization.”
+
 ### Beat 11 — Scale
 
 **Interviewer:** Ten-times files.
@@ -2223,6 +2815,19 @@ While drawing say: “Object storage owns bytes; metadata owns reachability and 
 **Board now:**
 - Read-heavy SLO
 - Analytics eventual
+
+**Draw now:** URL-shortener latency lanes.
+
+```mermaid
+flowchart LR
+  Browser --> Redirect["Redirect p99 under 100 ms"]
+  Redirect --> Cache[Edge cache]
+  Creator --> Create["Create p95 under 500 ms"]
+  Redirect --> Clicks[Async click log]
+  Clicks --> Analytics["Up to 1 min lag"]
+```
+
+While drawing say: “Redirect latency and availability are isolated from analytics durability.”
 
 ### Beat 4 — Model
 
@@ -2332,6 +2937,23 @@ While drawing say: “Redirect does not wait for analytics.”
 - Tombstone and purge
 - Bounded stale redirect
 
+**Draw now:** viral-link disable propagation.
+
+```mermaid
+sequenceDiagram
+  participant O as Owner
+  participant D as Link DB
+  participant C as CDN
+  participant B as Browser
+  O->>D: set link disabled
+  D->>C: purge cache tag
+  B->>C: request code
+  C->>D: revalidate after purge
+  D-->>B: disabled response
+```
+
+While drawing say: “The tombstone is immediate truth; purge plus TTL bounds stale redirects.”
+
 ### Beat 11 — Multi-region
 
 **Interviewer:** Global traffic?
@@ -2395,6 +3017,20 @@ While drawing say: “Redirect does not wait for analytics.”
 **Board now:**
 - 5 ms decision
 - Route-specific failure mode
+
+**Draw now:** the rate-limiter decision budget.
+
+```mermaid
+flowchart LR
+  Request --> Policy[Resolve policy]
+  Policy --> Local[Local token bucket]
+  Local --> Allow[Allow]
+  Local --> Reject[Reject with retry-after]
+  StoreDown[Regional store down] --> Mode[Route failure mode]
+  Mode --> Local
+```
+
+While drawing say: “The common decision stays local and under five milliseconds; failure behavior comes from policy.”
 
 ### Beat 4 — Algorithm
 
@@ -2480,6 +3116,20 @@ While drawing say: “Leases bound overshoot while removing a network hop from m
 - Degraded operation
 - Epoch-based lease recovery
 
+**Draw now:** lease failure and epoch recovery.
+
+```mermaid
+stateDiagram-v2
+  [*] --> LEASED
+  LEASED --> DEGRADED: regional store fails
+  DEGRADED --> EXHAUSTED: local lease spent
+  DEGRADED --> LEASED: store recovers
+  EXHAUSTED --> REACQUIRE: new epoch observed
+  REACQUIRE --> LEASED: fresh budget granted
+```
+
+While drawing say: “Epochs prevent old regional leases from becoming valid again after recovery.”
+
 ### Beat 10 — Hit counter
 
 **Interviewer:** Also return analytics counts.
@@ -2557,6 +3207,21 @@ While drawing say: “Leases bound overshoot while removing a network hop from m
 **Board now:**
 - Tenant and document ACLs
 - No unauthorized retrieval
+
+**Draw now:** the RAG trust boundary.
+
+```mermaid
+flowchart LR
+  Identity --> Policy[ACL policy]
+  Query --> Retrieve[Hybrid retrieval]
+  Policy --> Retrieve
+  Corpus[Versioned corpus] --> Retrieve
+  Retrieve --> Authorized[Authorized chunks only]
+  Authorized --> Model
+  Model --> Cited[Answer with citations]
+```
+
+While drawing say: “Authorization filters retrieval itself, so forbidden text never reaches the model context.”
 
 ### Beat 4 — NFRs
 
@@ -2678,6 +3343,21 @@ While drawing say: “Unauthorized chunks never enter the prompt.”
 - Corrected trust boundary
 - Prompt-injection defenses
 
+**Draw now:** prompt-injection control flow.
+
+```mermaid
+flowchart LR
+  System[System policy] --> Builder[Prompt builder]
+  Docs[Retrieved documents] --> Delimit[Delimited untrusted data]
+  Delimit --> Builder
+  Builder --> Model
+  Model --> Verify[Citation verification]
+  Tools[Side-effecting tools disabled] --> Model
+  Verify --> Answer
+```
+
+While drawing say: “Retrieved text is evidence, never control policy, and v1 exposes no mutation tools.”
+
 ### Beat 12 — Scale and close
 
 **Interviewer:** Ten-times corpus and QPS.
@@ -2745,6 +3425,22 @@ While drawing say: “Unauthorized chunks never enter the prompt.”
 **Board now:**
 - MQTT/HTTPS ingress
 - Sequence dedupe
+
+**Draw now:** the device retry and ordering path.
+
+```mermaid
+sequenceDiagram
+  participant D as Device
+  participant E as IoT Edge
+  participant B as Durable Broker
+  D->>E: batch with sequence range
+  E->>B: append by device key
+  B-->>E: durable offset
+  E-->>D: highest contiguous sequence
+  D->>E: retry missing suffix
+```
+
+While drawing say: “The sequence acknowledgment lets an offline device replay only what the platform has not durably accepted.”
 
 ### Beat 5 — Architecture
 
@@ -2841,6 +3537,27 @@ While drawing say: “Broker partitions by device ID; malformed data is quaranti
 **Board now:**
 - Versioned templates
 - Attempt history
+
+**Draw now:** notification intent and delivery entities.
+
+```mermaid
+erDiagram
+  NOTIFICATION ||--o{ DELIVERY_ATTEMPT : produces
+  TEMPLATE_VERSION ||--o{ NOTIFICATION : renders
+  PREFERENCE ||--o{ NOTIFICATION : governs
+  NOTIFICATION {
+    uuid notification_id PK
+    string event_key
+    string priority
+  }
+  DELIVERY_ATTEMPT {
+    uuid attempt_id PK
+    string channel
+    string status
+  }
+```
+
+While drawing say: “One durable intent can create independent, auditable attempts across eligible channels.”
 
 ### Beat 4 — API
 
@@ -2966,6 +3683,24 @@ While drawing say: “Each channel has independent retries, rate limits, and cir
 - Core entities
 - Idempotent send
 
+**Draw now:** per-conversation ordering.
+
+```mermaid
+sequenceDiagram
+  participant A as Sender A
+  participant B as Sender B
+  participant H as Conversation Home
+  participant L as Conversation Log
+  A->>H: send client message A
+  B->>H: send client message B
+  H->>L: append sequence 41
+  H->>L: append sequence 42
+  L-->>A: committed message 41
+  L-->>B: committed message 42
+```
+
+While drawing say: “Concurrent sends become a single durable order at the conversation home shard.”
+
 ### Beat 5 — Architecture
 
 ```mermaid
@@ -3076,6 +3811,22 @@ While drawing say: “The conversation log is durable truth; sockets are deliver
 - Run and attempt entities
 - Idempotent submission
 
+**Draw now:** the workflow task lifecycle.
+
+```mermaid
+stateDiagram-v2
+  [*] --> BLOCKED
+  BLOCKED --> READY: dependencies succeed
+  READY --> LEASED: worker claims
+  LEASED --> SUCCEEDED: fenced commit
+  LEASED --> READY: lease expires and retry allowed
+  LEASED --> FAILED: terminal error
+  FAILED --> [*]
+  SUCCEEDED --> [*]
+```
+
+While drawing say: “Database state advances the DAG, and a lease only grants temporary execution authority.”
+
 ### Beat 5 — Architecture
 
 ```mermaid
@@ -3184,6 +3935,22 @@ While drawing say: “The queue announces readiness; database state decides whet
 **Board now:**
 - Versioned definitions
 - Model-pinned feature set
+
+**Draw now:** training and serving consistency.
+
+```mermaid
+flowchart LR
+  Definition[Versioned feature definition] --> Batch
+  Definition --> Stream
+  Batch --> Offline[Offline values]
+  Stream --> Online[Online values]
+  Offline --> Training[Training snapshot]
+  Training --> Model[Model pins version set]
+  Model --> Serving
+  Online --> Serving
+```
+
+While drawing say: “The model pins feature semantics, and both materialization paths trace back to those versions.”
 
 ### Beat 5 — Architecture
 
