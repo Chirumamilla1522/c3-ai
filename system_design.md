@@ -1,3173 +1,3365 @@
-# C3 AI System Design Interview Master Doc (Detailed)
+# C3 AI System Design: Progressive Mock Interviews
 
-C3 AI design rounds skew **LLD-heavy** (schemas, APIs, race conditions) with occasional **HLD** (Kafka, caching, scale). Confirmed asks: Parking Lot, Car Rental (Enterprise), Metrics Logging, Pastebin-style spikes, Elevator OOD.
+This is a practice script, not a catalog of finished architectures. Read it aloud with a partner. If practicing alone, cover the interviewer lines, answer first, and reveal them afterward. The goal is to rehearse the conversation path: clarify one uncertainty, earn each box on the board, recover from weak ideas, and deepen only when invited.
 
-**The diagrams are visual anchors, not the answer.** Interviewers grade the reasoning you speak while drawing: why each boundary exists, which store is authoritative, where races occur, what can be stale, and how the design fails safely. Every major diagram below now has a narration script. Practice drawing fewer boxes while explaining every arrow; a pretty diagram without a consistency story is a weak answer.
-
-**Companion files:** `interview_stuff.md` · `text.md`
-
-**How to use this doc**
-1. Learn the **§0 framework** cold (first 8 minutes of every interview).
-2. For each prompt: redraw the **architecture + ERD + one sequence** on the board while talking.
-3. Always close with **concurrency + one failure mode + one scale lever**.
+Do not memorize the final diagrams. Practice reaching them from requirements.
 
 ---
 
-## Table of Contents
-
-0. [Interview framework (deep)](#0-interview-framework-deep)
-   - [0.7 What C3 interviewers actually score](#07-what-c3-interviewers-actually-score)
-   - [0.8 How to narrate any diagram](#08-how-to-narrate-any-diagram-template)
-   - [0.9 Anti-patterns that sink a design round](#09-anti-patterns-that-sink-a-design-round)
-   - [0.10 LLD vs HLD talk tracks](#010-lld-vs-hld-talk-tracks-sample-transcripts)
-   - [0.11 FDE angle](#011-fde-angle-enterprise-agents-telemetry--how-to-weave-your-story)
-1. [Parking Lot](#1-parking-lot-c3-actual--full-playbook)
-2. [Car Rental](#2-car-rental-enterprise-c3-actual--full-playbook)
-3. [Metrics Platform](#3-metrics-logging--aggregation-c3-actual--full-playbook)
-4. [Pastebin / Viral Text](#4-pastebin--viral-text-c3-actual--full-playbook)
-5. [Elevator OOD](#5-elevator-system-c3-ood--full-playbook)
-6. [Ticket Booking](#6-ticket--event-booking-ticketmaster-pattern)
-7. [Ride-Sharing](#7-ride-sharing)
-8. [Dropbox-like Storage](#8-dropbox-like-file-storage)
-9. [URL Shortener](#9-url-shortener)
-10. [Rate Limiter](#10-rate-limiter--hit-counter)
-11. [Enterprise RAG / Agents](#11-enterprise-rag--agent-platform)
-12. [IoT Telemetry](#12-iot--telemetry-ingestion)
-13. [Notifications](#13-notification-system)
-14. [Chat / Messaging](#14-chat--messaging)
-15. [Job / Workflow Queue](#15-distributed-job--workflow-system)
-16. [Feature Store / Model Serving](#16-feature-store--model-serving)
-17. [Cross-cutting patterns](#17-cross-cutting-patterns)
-18. [Capacity estimation](#18-capacity-estimation-workbook)
-19. [Failure modes](#19-failure-modes-catalog)
-20. [Practice rubric](#20-practice-rubric--mocks)
-
----
-
-## 0. Interview Framework (Deep)
-
-### 0.1 Minute-by-minute script (45 min)
-
-| Clock | Goal | Concrete output on board |
-|------:|------|--------------------------|
-| 0:00–1:00 | Opening | “Clarify → NFRs → model → APIs → hardest consistency → scale.” |
-| 1:00–5:00 | Clarify | Actors, scale numbers, consistency needs, v1 scope |
-| 5:00–8:00 | NFRs | 4 bullets with rough SLOs (latency/availability/consistency) |
-| 8:00–12:00 | Scope | In-scope list + explicit out-of-scope |
-| 12:00–22:00 | Data model | 5–7 entities, PKs/FKs, 2–3 indexes, status enums |
-| 22:00–28:00 | APIs | 5 endpoints with JSON request/response |
-| 28:00–38:00 | Deep dive | Transaction/lock OR queue/cache path + sequence diagram |
-| 38:00–43:00 | Scale & failures | One bottleneck + one failure + mitigation |
-| 43:00–45:00 | Wrap | Trade-offs in 3 sentences |
-
-### 0.2 Clarifying question bank (pick 6–8)
-
-**Product**
-- Who are the actors? (end user, operator, device, admin, partner system)
-- Core user journeys for v1? What can wait for v2?
-- Single tenant or multi-tenant / multi-region?
-
-**Traffic & data**
-- DAU / peak QPS? Read:write ratio?
-- Object sizes? Retention? Growth per day?
-- Spiky (viral, batch reconnect) or smooth?
-
-**Consistency & UX**
-- Which actions must be exactly-once / strongly consistent?
-- Is stale search OK for 5–30s?
-- Idempotent retries expected from mobile clients?
-
-**Ops**
-- Compliance (PII, SOC2, HIPAA)? Audit logs needed?
-- SLO/SLA? RPO/RTO if they care about DR?
-
-### 0.3 NFR template (fill on board)
-
-```text
-Latency:   p95 < ___ ms for ___ API
-Throughput: ___ peak QPS
-Consistency: strong on ___; eventual on ___
-Availability: ___ % (e.g. 99.9)
-Durability:  no loss for ___; best-effort for ___
-Security:    authn ___; authz ___; encryption ___
-```
-
-### 0.4 Decision tree: LLD vs HLD
-
-```mermaid
-flowchart TD
-  Q[Prompt received] --> A{Nouns like parking, rental,<br/>elevator, booking, seat?}
-  A -->|yes| LLD[Lead with ERD + locks + APIs]
-  A -->|no| B{Nouns like metrics, logs,<br/>viral, feed, ingest?}
-  B -->|yes| HLD[Lead with LB → queue → store]
-  B -->|unsure| Ask["Ask: schema focus or distributed scale?"]
-  Ask --> LLD
-  Ask --> HLD
-  LLD --> Scale[Add cache/queue if they push scale]
-  HLD --> Data[Add 3–4 tables for metadata]
-```
-
-### 0.5 Consistency cheat sheet
-
-| Need | Tool | Say this |
-|------|------|----------|
-| One scarce row | `SELECT … FOR UPDATE` | “Serialize writers on the spot/vehicle/seat.” |
-| High contention, fail-fast | Optimistic `version` CAS | “Loser gets 409 and retries.” |
-| Time-range uniqueness | Exclusion / overlap check | “No two active bookings with overlapping ranges.” |
-| Abandoned carts | Hold + TTL worker | “Soft reservation expires in 10 minutes.” |
-| Client double-submit | Idempotency-Key | “Unique constraint on key; return first result.” |
-| Cross-service | Outbox + webhook reconcile | “Payment and DB can diverge briefly; reconciler fixes.” |
-
-### 0.6 Generic layered architecture (HLD backbone)
-
-```mermaid
-flowchart TB
-  subgraph Edge
-    DNS[DNS / CDN]
-    LB[L7 Load Balancer]
-    WAF[WAF / Rate limit]
-  end
-  subgraph App
-    GW[API Gateway]
-    Svc[Stateless services]
-  end
-  subgraph Data
-    Cache[(Redis)]
-    Q[Kafka / SQS]
-    OLTP[(Postgres primary + replicas)]
-    Obj[(Object store / TSDB / Vector)]
-  end
-  subgraph Async
-    Workers[Workers / consumers]
-    Cron[Schedulers]
-  end
-  Client --> DNS --> LB --> WAF --> GW --> Svc
-  Svc --> Cache
-  Svc --> OLTP
-  Svc --> Q
-  Svc --> Obj
-  Q --> Workers
-  Workers --> OLTP
-  Workers --> Obj
-  Cron --> OLTP
-```
-
-**Narrate the generic architecture — say this while pointing:**
-
-- “The client crosses the edge in order: DNS/CDN finds and caches, the load balancer distributes, and the WAF rejects abusive traffic.”
-- “The gateway is the application trust boundary; stateless services hold business logic and can scale horizontally.”
-- “Redis is derived acceleration, Postgres is transactional truth, and the specialized object/series/vector store handles data that does not fit OLTP access patterns.”
-- “Publishing to the queue means the caller does not wait for slow secondary work; workers retry idempotently and schedulers initiate time-based repair.”
-- “The arrows back to stores are writes or reads with explicit timeout and retry policy. If a queue consumer dies, the durable message and idempotent sink let another consumer resume.”
-
-### 0.7 What C3 interviewers actually score
-
-A strong answer is not the one with the most infrastructure. It is the one in which each choice follows from a requirement and the correctness boundary is obvious.
-
-- **Requirement control:** you turn an open prompt into actors, core journeys, scale, and explicit v1 exclusions.
-- **Data modeling:** you name entities, keys, cardinalities, lifecycle states, and indexes that support the APIs.
-- **Race-condition awareness:** you identify the exact contested row or logical resource and serialize only that boundary.
-- **API semantics:** you cover retries, idempotency, pagination, status codes, and asynchronous completion.
-- **NFR reasoning:** you attach numbers to latency, throughput, retention, freshness, and availability instead of saying “high scale.”
-- **Trade-offs:** you say what is authoritative, what may be stale, and why the chosen compromise serves the user journey.
-- **Failure behavior:** you explain crashes between steps, duplicate delivery, poison work, reconciliation, and observability.
-- **Communication:** you narrate left-to-right, periodically summarize, and let the interviewer redirect the depth.
-
-**What excellent sounds like:** “Search can lag five seconds because booking revalidates against the primary. The exclusion constraint, not the cache, prevents overlap. If payment succeeds and our process dies, the provider webhook reconciles the booking.” That sentence combines UX, consistency, schema, and failure recovery.
-
-### 0.8 How to narrate any diagram (template)
-
-**Say this before drawing:**
-
-> “I’ll draw the synchronous user path first, then the source of truth, then asynchronous work. For every arrow I’ll state the payload and whether it is synchronous, durable, and retryable.”
-
-Use this five-pass narration:
-
-1. **Entry and trust boundary:** “The client enters through the gateway, which authenticates, authorizes, rate-limits, and attaches tenant context.”
-2. **Synchronous path:** “The service validates the command and performs only the work needed before returning.” Trace one request all the way to its response.
-3. **Source of truth:** point to one store and say, “This is authoritative for ___; caches and indexes can be rebuilt.”
-4. **Async arrows:** identify the event key, delivery guarantee, consumer, retry policy, and DLQ or reconciliation path.
-5. **Failure cut:** cover one arrow with your hand and ask, “If the process dies here, what durable fact lets us recover?”
-
-**When you draw a box, say:** “Its single responsibility is ___. I split it because it scales/fails/changes independently.”  
-**When you draw a database, say:** “It owns ___, is indexed by ___, and requires strong/eventual consistency because ___.”  
-**When you draw a cache, say:** “It accelerates ___; it is not authoritative; TTL/invalidation/rebuild works like ___.”  
-**When you draw a queue, say:** “It absorbs ___, partitions by ___, and provides at-least-once delivery, so the consumer is idempotent.”  
-**When you draw an arrow, say:** “This carries ___; the caller waits/does not wait; timeout is ___; retry is safe because ___.”
-
-For an **ERD**, narrate ownership first, then lifecycle rows, then constraints and indexes. For a **sequence diagram**, name the transaction boundary and the crash points. For a **state diagram**, state who is allowed to trigger each transition and how invalid transitions return `409` rather than silently mutating state.
-
-### 0.9 Anti-patterns that sink a design round
-
-- Starting with Kafka, Redis, or microservices before clarifying the product and scale.
-- Drawing arrows without saying what data travels, whether the call blocks, or what happens on retry.
-- Treating Redis, an index, or a replica as truth for a scarce-resource decision.
-- Saying “exactly once” without an idempotency key, unique constraint, or atomic state transition.
-- Listing tables without status lifecycles, foreign keys, uniqueness rules, or access-path indexes.
-- Calling every operation eventually consistent; booking, authorization, and ownership changes usually need a stronger boundary.
-- Splitting into many services that share one transaction, producing distributed failure without independent scaling value.
-- Ignoring deletion, retention, tenant isolation, audit, and operational recovery in an enterprise prompt.
-- Doing capacity arithmetic that never changes a design decision.
-- Ending when the diagram is full instead of summarizing invariant, bottleneck, failure recovery, and next scale lever.
-
-**Recovery phrase if you get lost:** “Let me re-anchor on the critical write. The authoritative row is ___, the invariant is ___, and the transaction is ___.”
-
-### 0.10 LLD vs HLD talk tracks (sample transcripts)
-
-**LLD sample (~150 words):**
-
-> “I’ll treat this as a correctness-first booking problem. The actors are a customer and an operator; v1 supports search, a ten-minute hold, confirmation, cancellation, and fulfillment. Search may be stale, but two active bookings must never own the same resource. I’ll model Resource, Booking, Payment, and an optional Fulfillment row. Booking has a status enum, hold expiry, idempotency key, and version. The create endpoint accepts an idempotency key. In one transaction I lock the selected resource, verify its state or time-range availability, insert the held booking, and commit. A unique or exclusion constraint is the final backstop. Confirmation authorizes payment and changes held to confirmed with a conditional update. A worker expires abandoned holds. If payment succeeds but our process crashes, a webhook and reconciler complete or refund the operation. I would index resource plus status and the expiry scan. At larger scale I partition by location, while keeping each resource’s writes on one owner.”
-
-**HLD sample (~150 words):**
-
-> “I’ll treat this as a throughput and isolation problem. I first want peak events per second, event size, retention, query freshness, and tenant cardinality. Producers send compressed batches to an authenticated ingest gateway. The gateway validates quotas and writes to a durable log before returning `202`; Kafka absorbs reconnect storms and lets storage, alerting, and archival consumers move independently. I partition by tenant plus a spread key so a large customer cannot hot-spot one partition, while preserving only the ordering we actually need. Consumers bulk-write an idempotent time-series sink and object storage. Query traffic goes through a planner that selects raw or rollup data and caches repeated dashboard windows. At-least-once delivery means duplicates are expected, so event identity is part of the sink key. Backpressure appears as lag, which drives autoscaling and admission control. Per-tenant quotas, encryption, audit logs, regional residency, and replay tooling make this deployable in an enterprise environment.”
-
-### 0.11 FDE angle (enterprise, agents, telemetry) — how to weave your story
-
-An FDE answer connects software design to the customer’s operating environment. Add these points naturally; do not bolt on an “enterprise” box at the end.
-
-- **Tenant and site boundaries:** put `tenant_id` on keys, partitioning, quotas, audit events, and cache keys. Mention regional residency when relevant.
-- **Messy integration reality:** connectors are versioned, credentials rotate, schemas drift, and edge sites disconnect. Include validation, quarantine, replay, and backfill.
-- **Operator workflow:** expose health, lag, last successful sync, dead letters, and a safe replay or override action—not only end-user APIs.
-- **Telemetry:** define correlation IDs, structured events, SLOs, and dashboards for the hard invariant. Alert on business failure, not just CPU.
-- **Agents:** tools are typed and allowlisted; reads respect ACLs; writes require policy checks, budgets, audit, and sometimes human approval.
-- **Deployment:** start with a modular service and managed stores; justify every split with team, scale, security, or failure isolation.
-- **Change management:** version schemas, prompts, models, rules, and APIs; canary or shadow risky changes; preserve rollback.
-
-**Say this:** “Because this serves enterprise operations, I need to design the operator path too: tenant-scoped audit, connector health, replay, and a controlled override. That is what turns the happy-path diagram into a system a customer can run.”
-
-
----
-
-## 1. Parking Lot (C3 actual) — Full Playbook
-
-### 1.1 Problem restatement (say this)
-
-> “Drivers find and reserve a spot (optionally by type), enter/exit a lot, and pay. The hard invariant is that one spot is never assigned to two active sessions.”
-
-### 1.2 Clarify (ask out loud)
-
-1. One lot or many lots / floors / gates?
-2. Spot types: compact, large, EV, handicap?
-3. Walk-in only, or advance reservation?
-4. Pricing: flat, hourly, progressive? Payments in-app or at gate?
-5. Scale: spots per lot (~500–5000)? Concurrent entries/min?
-6. Need admin dashboards / occupancy analytics?
-
-### 1.3 Assumptions for v1 (write them)
-
-* Multi-floor lot, typed spots, advance hold + walk-in
-* Strong consistency on assign; availability counts may lag ≤30s
-* Card payment via Stripe-like provider
-* Out of scope v2: dynamic pricing ML, ANPR cameras, valet
-
-### 1.4 NFRs (with numbers)
-
-| NFR | Target |
-|-----|--------|
-| Assign / check-in p95 | < 200 ms |
-| Availability read p95 | < 100 ms (cached) |
-| Consistency | Spot status strongly consistent |
-| Availability | 99.9% for booking API |
-| Hold TTL | 10 minutes |
-| Peak | 50 assigns/sec per large lot (burst) |
-
-### 1.5 High-level architecture
-
-```mermaid
-flowchart TB
-  subgraph Clients
-    Mobile[Driver app]
-    Kiosk[Gate kiosk]
-    Admin[Ops console]
-  end
-
-  Mobile --> CDN[CDN static]
-  Mobile --> LB[API Gateway + JWT auth]
-  Kiosk --> LB
-  Admin --> LB
-
-  LB --> PS[Parking Service]
-  LB --> PayS[Payment Service]
-  LB --> Occ[Occupancy / Analytics API]
-
-  PS --> Redis[(Redis<br/>availability counters<br/>idempotency keys)]
-  PS --> PG[(Postgres primary)]
-  PG --> PGR[(Read replicas)]
-  PayS --> Stripe[Payment provider]
-  Stripe -.->|webhooks| PayS
-  PayS --> PG
-
-  Exp[Hold expiry worker] --> PG
-  Exp --> Redis
-  CDC[CDC / events] --> PG
-  CDC --> Kafka[Kafka occupancy.events]
-  Kafka --> Occ
-  Occ --> PGR
-```
-
-**Architecture narration — say this while pointing:**
-
-- Clients converge at the gateway so identity and rate limits are consistent.
-- The Parking Service owns spot state; Payment is separate because provider callbacks and retries have a different lifecycle.
-- Postgres is authoritative. Redis counters answer “roughly how many,” never “may I assign this exact spot?”
-- CDC carries committed changes to Kafka; analytics consumes asynchronously, so reporting cannot block a gate.
-- The expiry worker releases abandoned holds and repairs Redis from the committed transition.
-
-### 1.6 Component responsibilities
-
-| Component | Responsibility |
-|-----------|----------------|
-| Parking Service | Availability, holds, check-in/out, spot CAS |
-| Payment Service | Intent/capture, webhook handling, refunds |
-| Redis | Hot free-count by `(lot_id, type)`; idempotency |
-| Postgres | Source of truth for spots & reservations |
-| Expiry worker | `held → expired` when `hold_expires_at < now()` |
-| Analytics | Near-real-time occupancy from events (eventual) |
-
-### 1.7 ERD (detailed)
-
-```mermaid
-erDiagram
-  USER ||--o{ VEHICLE : owns
-  USER ||--o{ RESERVATION : places
-  PARKING_LOT ||--|{ FLOOR : has
-  FLOOR ||--|{ PARKING_SPOT : has
-  PARKING_SPOT ||--o{ RESERVATION : assigned_to
-  VEHICLE ||--o{ RESERVATION : used_in
-  RESERVATION ||--o| PAYMENT : billed_by
-  RESERVATION ||--o| PARKING_SESSION : realizes
-
-  USER {
-    uuid id PK
-    string email UK
-    string phone
-    timestamp created_at
-  }
-  PARKING_LOT {
-    uuid id PK
-    string name
-    string timezone
-    string address
-  }
-  FLOOR {
-    uuid id PK
-    uuid lot_id FK
-    int floor_number
-  }
-  PARKING_SPOT {
-    uuid id PK
-    uuid floor_id FK
-    uuid lot_id FK
-    string code
-    enum type "compact|large|ev|handicap"
-    enum status "free|held|occupied|oos"
-    int version
-  }
-  VEHICLE {
-    uuid id PK
-    uuid user_id FK
-    string plate UK
-    enum type
-  }
-  RESERVATION {
-    uuid id PK
-    uuid user_id FK
-    uuid spot_id FK
-    uuid vehicle_id FK
-    enum status "held|confirmed|active|completed|cancelled|expired"
-    timestamp start_ts
-    timestamp end_ts
-    timestamp hold_expires_at
-    string idempotency_key UK
-    int version
-  }
-  PAYMENT {
-    uuid id PK
-    uuid reservation_id FK
-    int amount_cents
-    string currency
-    enum status "requires_action|authorized|captured|failed|refunded"
-    string provider_ref
-  }
-  PARKING_SESSION {
-    uuid id PK
-    uuid reservation_id FK
-    timestamp entry_ts
-    timestamp exit_ts
-    int fee_cents
-  }
-```
-
-**ERD narration — say this while pointing:**
-
-- Lot and Floor describe physical containment; Spot is the scarce row.
-- Reservation records intent and lifecycle; Session records actual entry and exit; Payment records money separately.
-- The one-to-many arrows allow history, but active-state constraints prevent simultaneous ownership.
-- Say the access paths aloud: search spots by lot/type/status, expire by status/hold_expires_at, and dedupe by idempotency_key.
-
-### 1.8 Indexes
-
-```sql
-CREATE INDEX ON parking_spot (lot_id, type, status);
-CREATE UNIQUE INDEX ON parking_spot (lot_id, code);
-CREATE INDEX ON reservation (spot_id, status, start_ts);
-CREATE UNIQUE INDEX ON reservation (idempotency_key);
-CREATE INDEX ON reservation (status, hold_expires_at);  -- expiry worker
-```
-
-### 1.9 State machine
-
-```mermaid
-stateDiagram-v2
-  [*] --> Held: POST /reservations
-  Held --> Confirmed: payment authorized
-  Held --> Expired: TTL worker
-  Held --> Cancelled: user cancel
-  Confirmed --> Active: check-in at gate
-  Active --> Completed: check-out + capture payment
-  Confirmed --> Cancelled: cancel policy
-```
-
-**State-diagram narration — say this while pointing:**
-
-- Held is deliberately temporary and has three exits: payment, expiry, or cancellation.
-- Only a confirmed reservation may check in; only an active session may complete.
-- Each transition is a conditional update from the expected old state; invalid or repeated commands return the existing result or 409.
-
-### 1.10 APIs (full JSON)
-
-**Create hold**
-```http
-POST /v1/reservations
-Idempotency-Key: 7f3c…
-{ "lotId": "…", "vehicleId": "…", "spotType": "ev", "startTs": "…", "endTs": "…" }
-
-201
-{ "reservationId": "…", "spotId": "…", "spotCode": "B-214",
-  "status": "held", "holdExpiresAt": "…", "pricingEstimateCents": 1200 }
-```
-
-**Check-in / out**
-```http
-POST /v1/reservations/{id}/check-in   → { "sessionId", "entryTs" }
-POST /v1/reservations/{id}/check-out  → { "feeCents", "paymentStatus" }
-```
-
-**Availability**
-```http
-GET /v1/lots/{lotId}/availability?type=ev
-→ { "free": 12, "held": 3, "occupied": 40, "asOf": "…", "cached": true }
-```
-
-### 1.11 Concurrency deep dive (draw this sequence)
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant A as Client A
-  participant B as Client B
-  participant API as Parking Service
-  participant DB as Postgres
-
-  A->>API: POST /reservations (EV)
-  B->>API: POST /reservations (EV)
-  API->>DB: BEGIN
-  API->>DB: SELECT id,version FROM parking_spot<br/>WHERE lot=? AND type='ev' AND status='free'<br/>ORDER BY id FOR UPDATE SKIP LOCKED LIMIT 1
-  Note over DB: A gets spot B-214
-  API->>DB: UPDATE spot SET status='held', version=version+1
-  API->>DB: INSERT reservation status=held
-  API->>DB: COMMIT
-  API-->>A: 201 B-214
-
-  API->>DB: BEGIN
-  API->>DB: SELECT … FOR UPDATE SKIP LOCKED
-  alt another free EV exists
-    API->>DB: hold that spot; COMMIT
-    API-->>B: 201 other spot
-  else none left
-    API->>DB: ROLLBACK
-    API-->>B: 409 NO_SPOTS
-  end
-```
-
-**Concurrency-sequence narration — say this while pointing:**
-
-- Both requests race, but the database lock chooses one owner of B-214.
-- `SKIP LOCKED` lets the second request inspect another row instead of waiting behind the first.
-- Spot update and reservation insert share one transaction, so no visible state has a spot held without its reservation.
-- A rollback or 409 is a normal business outcome, not a server error.
-
-**Why `SKIP LOCKED`:** under burst, waiters don’t pile up on the same row; they take the next free spot.
-
-**Optimistic alternative (mention):**
-```sql
-UPDATE parking_spot SET status='held', version=version+1
-WHERE id=$1 AND status='free' AND version=$2;
--- rowcount 0 → conflict → retry pick
-```
-
-### 1.12 Redis availability counters
-
-```text
-INCR lot:{id}:free:ev   on free←held/occupied reverse
-GET  lot:{id}:free:ev   for availability API
-```
-Rebuild from SQL on mismatch; cache is an optimization, not source of truth.
-
-### 1.13 Pricing & payment failure
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant P as Parking
-  participant Pay as Payment Svc
-  participant S as Stripe
-
-  U->>P: checkout
-  P->>Pay: create payment intent
-  Pay->>S: authorize
-  S-->>Pay: ok
-  Pay->>P: mark authorized
-  Note over P: If DB update fails after Stripe ok:<br/>webhook + reconciler sets state
-```
-
-**Payment-sequence narration — say this while pointing:**
-
-- Authorization crosses a non-transactional provider boundary.
-- The local state change can fail after provider success, so the webhook is a durable second path.
-- A reconciler compares provider references with payment rows and either completes the state or issues compensation.
-
-### 1.14 Scale roadmap
-
-| Phase | Change |
-|-------|--------|
-| v1 | Single Postgres, Redis counters, one lot |
-| v2 | Read replicas for analytics; partition reservations by month |
-| v3 | Shard by `lot_id` (each mega-lot its own DB); gate kiosks offline queue |
-
-### 1.15 Follow-up questions & answers
-
-| Interviewer | You |
-|-------------|-----|
-| How do you prevent double assign? | Row lock / CAS on spot status in one transaction with insert. |
-| Availability wrong? | Redis can drift; SQL is truth; periodic reconcile. |
-| EV charger also scarce? | Model charger as second resource or spot subtype with own lock. |
-| Overstay? | Session exit fee job; status stays occupied until paid. |
-
-### 1.16 Closing script (30 sec)
-
-> “Source of truth is Postgres with `FOR UPDATE SKIP LOCKED` on free spots. Holds expire via worker. Redis only accelerates availability reads. Payments are authorized on confirm and reconciled by webhook if we crash mid-flight.”
-
-
-### 1.A What the interviewer is grading
-
-- Frame Parking Lot around the user journey and explicitly name the authoritative state.
-- Model the core resource—parking spot—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a physical spot can belong to at most one non-terminal reservation or active session.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: assignment p95 under 200 ms; cached counts may lag 30 seconds.
-- Explain the trade-off: serialize spot assignment while keeping occupancy analytics eventual.
-- Walk through failure recovery for a gate retry or two drivers racing for the last EV spot.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 1.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Parking Lot by first fixing the v1 journey, scale, and consistency boundary. The critical resource is parking spot, and my non-negotiable invariant is that a physical spot can belong to at most one non-terminal reservation or active session. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume assignment p95 under 200 ms; cached counts may lag 30 seconds. The key trade-off is to serialize spot assignment while keeping occupancy analytics eventual. After the happy path I’ll test retries, concurrency, and a gate retry or two drivers racing for the last EV spot. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 1.C Deep explanation of the hard invariant
-
-**Invariant:** A physical spot can belong to at most one non-terminal reservation or active session.
-
-This exists because a gate retry or two drivers racing for the last EV spot can make two valid-looking requests overlap in time. A read-then-write check in application code is insufficient: both requests can observe the old state before either commits. If the invariant fails, downstream compensation is often impossible or expensive—two people own one scarce thing, unauthorized context leaks, a side effect runs twice, or historical data becomes untrustworthy.
-
-Defend it at the narrowest authoritative boundary: Postgres spot and reservation rows. Use one atomic conditional update, row lock, uniqueness/exclusion constraint, sequence allocator, or lease according to the model. Treat a constraint conflict as an expected `409`, make retry identity durable, and keep cache/index state outside the proof. Then add an invariant monitor and repair workflow; the database guard prevents known races, while telemetry catches bugs and operational drift.
-
-### 1.D Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 1.E Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Postgres spot and reservation rows owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a physical spot can belong to at most one non-terminal reservation or active session. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for parking spot. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 1.F Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps Postgres spot and reservation rows authoritative for parking spot. The hard guarantee is that a physical spot can belong to at most one non-terminal reservation or active session, enforced atomically rather than inferred from cache. The main path meets assignment p95 under 200 ms; cached counts may lag 30 seconds, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 2. Car Rental (Enterprise) (C3 actual) — Full Playbook
-
-### 2.1 Restatement
-
-> “Customers search vehicles by location/class/dates, hold one, pay, pick up and return. Invariant: no overlapping confirmed rentals for the same vehicle.”
-
-### 2.2 Clarify
-
-* One-way returns? Cross-branch?
-* Insurance / add-ons / young-driver fees?
-* Instant book vs request-to-book?
-* Fleet size (10k cars)? Booking lead time?
-* Corporate accounts / multi-driver?
-
-### 2.3 NFRs
-
-| NFR | Target |
-|-----|--------|
-| Search p95 | < 300 ms |
-| Create booking p95 | < 400 ms |
-| Double-book risk | Zero for confirmed |
-| Hold TTL | 15 min |
-| Peak search | 2k QPS |
-| Peak book | 100 QPS |
-
-### 2.4 Architecture
-
-```mermaid
-flowchart TB
-  Web[Web/Mobile] --> LB
-  LB --> Search[Search Service]
-  LB --> Booking[Booking Service]
-  LB --> Fleet[Fleet / Ops Service]
-  LB --> Pay[Payment Service]
-
-  Search --> OS[(OpenSearch)]
-  Search --> Rep[(Postgres replica)]
-  Booking --> Pri[(Postgres primary)]
-  Booking --> Redis[(Redis idempotency + holds)]
-  Fleet --> Pri
-  Pay --> Stripe
-  Stripe -->|webhooks| Pay
-
-  CDC[Debezium CDC] --> Pri
-  CDC --> OS
-  Worker[Expiry + no-show worker] --> Pri
-```
-
-**Architecture narration — say this while pointing:**
-
-- Web and mobile share a gateway, then reads and writes split.
-- Search reads OpenSearch or a replica for filters and scale; Booking writes only the primary.
-- CDC updates the search projection after commit, making staleness explicit and repairable.
-- Payment webhooks and expiry workers are retryable asynchronous actors.
-
-**Why split Search vs Booking?** Different scaling and consistency: search may be slightly stale; booking must be correct.
-
-### 2.5 ERD
-
-```mermaid
-erDiagram
-  USER ||--o{ BOOKING : books
-  LOCATION ||--o{ VEHICLE : stationed
-  VEHICLE_CLASS ||--o{ VEHICLE : classifies
-  VEHICLE_CLASS ||--o{ RATE : priced
-  VEHICLE ||--o{ BOOKING : reserved
-  VEHICLE ||--o{ MAINTENANCE : blocked_by
-  BOOKING ||--o| PAYMENT : paid
-  BOOKING ||--o{ BOOKING_ADDON : includes
-
-  VEHICLE {
-    uuid id PK
-    uuid location_id FK
-    string vin UK
-    uuid class_id FK
-    enum status "available|held|on_rent|maintenance"
-    int version
-    int odometer
-  }
-  BOOKING {
-    uuid id PK
-    uuid user_id FK
-    uuid vehicle_id FK
-    uuid pickup_location_id FK
-    uuid dropoff_location_id FK
-    timestamp start_ts
-    timestamp end_ts
-    enum status
-    timestamp hold_expires_at
-    string idempotency_key UK
-    int total_cents
-    int version
-  }
-```
-
-**ERD narration — say this while pointing:**
-
-- Vehicle is the allocatable asset; VehicleClass and Rate describe what customers search and pay for.
-- Booking snapshots vehicle, locations, interval, status, and price so later catalog changes do not rewrite history.
-- Maintenance is another interval that blocks availability and must participate in conflict checks.
-
-### 2.6 Overlap invariant (critical diagram)
-
-```mermaid
-flowchart TD
-  New["New booking [S,E)"] --> Q{Exists confirmed/held/active<br/>booking on same vehicle<br/>with range overlap?}
-  Q -->|yes| Reject[409 OVERLAP]
-  Q -->|no| Lock[Lock vehicle row / insert with exclusion]
-  Lock --> OK[Hold created]
-```
-
-**Invariant-flow narration — say this while pointing:**
-
-- The overlap predicate is `existing.start < new.end AND existing.end > new.start` for half-open intervals.
-- The precheck improves error messages, but only the lock or exclusion constraint closes the race.
-- A conflict becomes 409; callers may choose another vehicle.
-
-**Postgres exclusion (strong answer):**
-```sql
-ALTER TABLE booking ADD CONSTRAINT booking_no_overlap
-EXCLUDE USING gist (
-  vehicle_id WITH =,
-  tstzrange(start_ts, end_ts, '[)') WITH &&
-) WHERE (status IN ('held','confirmed','active'));
-```
-
-### 2.7 Booking sequence
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant U as User
-  participant S as Search
-  participant B as Booking
-  participant DB as Postgres
-  participant P as Payments
-
-  U->>S: GET /vehicles/search?from&to&class
-  S-->>U: candidates (possibly slightly stale)
-  U->>B: POST /bookings {vehicleId, from, to, Idempotency-Key}
-  B->>DB: BEGIN
-  B->>DB: verify vehicle available + no overlap
-  B->>DB: INSERT booking held OR conflict on exclusion
-  B->>DB: COMMIT
-  B-->>U: holdId + expiresAt
-  U->>B: POST /bookings/{id}/confirm
-  B->>P: authorize
-  P-->>B: ok
-  B->>DB: held → confirmed
-  B-->>U: confirmation
-```
-
-**Booking-sequence narration — say this while pointing:**
-
-- Search returns candidates, not promises.
-- Create hold enters a database transaction and lets the exclusion constraint arbitrate races.
-- Payment happens after the short hold exists; confirmation is conditional on held and unexpired.
-- Webhook reconciliation handles the crash after authorization.
-
-### 2.8 APIs
-
-```http
-GET  /v1/vehicles/search?locationId&class&from&to&page
-POST /v1/bookings
-     { vehicleId, pickupLocationId, dropoffLocationId, from, to, addOns[], idempotencyKey }
-POST /v1/bookings/{id}/confirm
-POST /v1/bookings/{id}/cancel
-POST /v1/bookings/{id}/extend { newEndTs }
-POST /v1/bookings/{id}/pickup  | /return
-GET  /v1/bookings/{id}
-```
-
-### 2.9 State machine
-
-```mermaid
-stateDiagram-v2
-  [*] --> Held
-  Held --> Confirmed: pay OK
-  Held --> Expired: TTL
-  Held --> Cancelled
-  Confirmed --> Active: pickup
-  Active --> Completed: return
-  Confirmed --> NoShow: worker
-  Confirmed --> Cancelled
-```
-
-**State-diagram narration — say this while pointing:**
-
-- Held owns inventory temporarily; Confirmed owns it until pickup or cancellation.
-- Active represents custody and Completed preserves history.
-- No-show and expiry are worker-driven transitions with explicit policies.
-
-### 2.10 Scale & search freshness
-
-* Indexer lag 1–5s acceptable if booking always re-validates in SQL.
-* On book success: publish `vehicle_blocked` event to remove from search quickly.
-* Shard bookings by `pickup_location_id` at very large scale.
-
-### 2.11 Follow-ups
-
-| Q | A |
-|---|---|
-| Same car, different branches? | Track `location_id`; one-way creates relocation job. |
-| Maintenance window? | `MAINTENANCE` table participates in overlap checks. |
-| Price change after hold? | Freeze rate snapshot on hold row. |
-
-### 2.12 Close
-
-> “Search is optimized for read scale and can be briefly stale. Booking re-checks and enforces a GiST exclusion on vehicle + time range so double rental is impossible. Holds TTL out; payments reconcile via webhooks.”
-
-
-### 2.A What the interviewer is grading
-
-- Frame Car Rental around the user journey and explicitly name the authoritative state.
-- Model the core resource—vehicle-time interval—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: one vehicle has no overlapping held, confirmed, or active rental intervals.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: search p95 under 300 ms; booking correctness is strict.
-- Explain the trade-off: allow a stale search index but revalidate every booking on the primary.
-- Walk through failure recovery for two customers selecting the same car or a payment callback arriving late.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 2.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Car Rental by first fixing the v1 journey, scale, and consistency boundary. The critical resource is vehicle-time interval, and my non-negotiable invariant is that one vehicle has no overlapping held, confirmed, or active rental intervals. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume search p95 under 300 ms; booking correctness is strict. The key trade-off is to allow a stale search index but revalidate every booking on the primary. After the happy path I’ll test retries, concurrency, and two customers selecting the same car or a payment callback arriving late. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 2.C Deep explanation of the hard invariant
-
-**Invariant:** One vehicle has no overlapping held, confirmed, or active rental intervals.
-
-This exists because two customers selecting the same car or a payment callback arriving late can make two valid-looking requests overlap in time. A read-then-write check in application code is insufficient: both requests can observe the old state before either commits. If the invariant fails, downstream compensation is often impossible or expensive—two people own one scarce thing, unauthorized context leaks, a side effect runs twice, or historical data becomes untrustworthy.
-
-Defend it at the narrowest authoritative boundary: Postgres booking exclusion constraint. Use one atomic conditional update, row lock, uniqueness/exclusion constraint, sequence allocator, or lease according to the model. Treat a constraint conflict as an expected `409`, make retry identity durable, and keep cache/index state outside the proof. Then add an invariant monitor and repair workflow; the database guard prevents known races, while telemetry catches bugs and operational drift.
-
-### 2.D Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 2.E Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Postgres booking exclusion constraint owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve one vehicle has no overlapping held, confirmed, or active rental intervals. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for vehicle-time interval. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 2.F Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps Postgres booking exclusion constraint authoritative for vehicle-time interval. The hard guarantee is that one vehicle has no overlapping held, confirmed, or active rental intervals, enforced atomically rather than inferred from cache. The main path meets search p95 under 300 ms; booking correctness is strict, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 3. Metrics Logging & Aggregation (C3 actual) — Full Playbook
-
-### 3.1 Restatement
-
-> “Services emit high-cardinality time series; we ingest reliably under spikes, store efficiently, and serve dashboard queries with rollups.”
-
-### 3.2 Clarify
-
-* Push agents vs pull Prometheus-style?
-* Cardinality (unique series)? Histograms?
-* Retention: raw 7d, 1m for 90d, 1h for 2y?
-* Multi-tenant isolation? Alerting in scope?
-
-### 3.3 Capacity sketch (say numbers)
-
-```text
-20k hosts × 150 metrics × 1 sample/min
-= 3e6 samples/min ≈ 50k samples/sec average
-× 5 peak = 250k samples/sec
-≈ never write each sample as an OLTP row
-```
-
-### 3.4 Architecture (detailed)
-
-```mermaid
-flowchart TB
-  subgraph Sources
-    App[Apps / sidecars]
-    Host[Node exporters]
-  end
-
-  App --> GW[Ingest Gateway<br/>auth, tenant, rate limit, batch]
-  Host --> GW
-  GW --> K1[Kafka topic metrics.raw<br/>key=tenant_id:metric]
-
-  K1 --> W[Writer consumer group]
-  K1 --> A[Anomaly consumer]
-  W --> TS[(Timescale / Cassandra / VictoriaMetrics)]
-  W --> K2[Kafka metrics.rollup.1m]
-  K2 --> R[(Rollup store / materialized)]
-  A --> Alert[Alertmanager / Pager]
-
-  UI[Grafana-like UI] --> Q[Query API]
-  Q --> Cache[(Redis query cache)]
-  Q --> R
-  Q --> TS
-```
-
-**Architecture narration — say this while pointing:**
-
-- Agents batch points at the gateway; the gateway authenticates tenant, enforces quota, and durably publishes.
-- Kafka is the shock absorber and replay boundary, not merely a transport.
-- Independent consumers write raw data, compute rollups, and evaluate anomalies.
-- The query API chooses raw versus rollup and uses Redis only for repeated windows.
-
-### 3.5 Why each piece
-
-| Piece | Why |
-|-------|-----|
-| Gateway | Auth, tenant quotas, compression, 202 async accept |
-| Kafka | Buffer spikes; replay; fan-out to writers + alertors |
-| Partition key | Avoid hot partitions; keep tenant ordering if needed |
-| TSDB | Wide/time-optimized writes; compression |
-| Rollups | Dashboard queries must not scan raw forever |
-| Cache | Repeated dashboard panels |
-
-### 3.6 Ingest sequence
-
-```mermaid
-sequenceDiagram
-  participant S as Service
-  participant G as Gateway
-  participant K as Kafka
-  participant W as Writer
-  participant T as TSDB
-
-  S->>G: POST /ingest (500 points)
-  G->>G: validate + tenant quota
-  G->>K: produce batch
-  G-->>S: 202 Accepted {batchId}
-  K->>W: poll
-  W->>T: bulk write
-  W->>K: emit 1m rollup updates
-  Note over W: Commit Kafka offset only after successful write<br/>(or outbox ideom for at-least-once + idempotent TSDB keys)
-```
-
-**Ingest-sequence narration — say this while pointing:**
-
-- The service receives 202 only after Kafka acknowledges the batch.
-- The writer bulk-writes and commits its offset after the sink succeeds.
-- Because a crash can repeat the batch, series/event identity makes the sink idempotent.
-- Lag, DLQ count, and end-to-end freshness are the operational signals.
-
-### 3.7 Data model
-
-```text
-Raw:    (tenant_id, metric, tags_hash, ts, value, type)
-Rollup: (tenant_id, metric, tags_hash, window_ts, count, sum, min, max, haves)
-Series catalog: (tenant_id, metric, tags_json, created_at)  -- control cardinality
-```
-
-**Cardinality guard:** reject or sample series above tenant budget.
-
-### 3.8 Query API
-
-```http
-POST /v1/query
-{ "tenantId": "…", "metric": "http_req_latency_ms",
-  "tags": {"route":"/checkout"}, "from":"…", "to":"…", "step":"1m",
-  "agg":"p95" }
-```
-
-Query planner: if `step>=1m` and range>2h → rollup store; else raw.
-
-### 3.9 Failure & consistency
-
-* At-least-once from Kafka → idempotent writes with `(series_id, ts)` unique.
-* Prefer **availability** on ingest; dashboards lag seconds.
-* Poison batches → DLQ topic + alert.
-
-### 3.10 Close
-
-> “Gateway + Kafka protect storage from bursts. TSDB holds raw hot data; rollups serve dashboards. We explicitly do not use relational inserts per point.”
-
-
-### 3.A What the interviewer is grading
-
-- Frame Metrics Platform around the user journey and explicitly name the authoritative state.
-- Model the core resource—metric event identity—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: an accepted metric batch is durably retained and duplicate delivery cannot inflate a series.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: 250k samples/sec peak; seconds of dashboard lag are acceptable.
-- Explain the trade-off: favor available asynchronous ingest while bounding cardinality and query cost.
-- Walk through failure recovery for producer retries, reconnect storms, poison batches, or lagging consumers.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 3.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Metrics Platform by first fixing the v1 journey, scale, and consistency boundary. The critical resource is metric event identity, and my non-negotiable invariant is that an accepted metric batch is durably retained and duplicate delivery cannot inflate a series. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume 250k samples/sec peak; seconds of dashboard lag are acceptable. The key trade-off is to favor available asynchronous ingest while bounding cardinality and query cost. After the happy path I’ll test retries, concurrency, and producer retries, reconnect storms, poison batches, or lagging consumers. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 3.C Deep explanation of the hard invariant
-
-**Invariant:** An accepted metric batch is durably retained and duplicate delivery cannot inflate a series.
-
-Accepted batches must survive a gateway crash, and replay must not double-count a sample. Without that guarantee, a successful `202` can correspond to lost monitoring data, or an at-least-once retry can create false alerts and corrupt aggregates. Cardinality is part of correctness too: an unbounded tag such as request ID can exhaust the platform for every tenant.
-
-Return `202` only after Kafka acknowledges the record. Give each point or batch a stable event identity and make `(tenant_id, series_id, event_id)` or `(series_id, timestamp, source_sequence)` idempotent at the sink. Commit offsets only after durable bulk write, compute rollups from deduplicated input, and enforce per-tenant series budgets at ingest. Defend this with accepted-to-stored lag, duplicate rate, dropped-series count, and replay tests.
-
-### 3.D Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 3.E Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Kafka retention plus idempotent tsdb keys owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve an accepted metric batch is durably retained and duplicate delivery cannot inflate a series. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for metric event identity. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 3.F Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps Kafka retention plus idempotent TSDB keys authoritative for metric event identity. The hard guarantee is that an accepted metric batch is durably retained and duplicate delivery cannot inflate a series, enforced atomically rather than inferred from cache. The main path meets 250k samples/sec peak; seconds of dashboard lag are acceptable, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 4. Pastebin / Viral Text (C3 actual) — Full Playbook
-
-### 4.1 Restatement
-
-> “Users publish text snippets and share a short link. Reads can go massively viral on a single key; writes are moderate.”
-
-### 4.2 Clarify
-
-Max size (1MB)? TTL? Password-private? Burn-after-read? Custom aliases? Auth required?
-
-### 4.3 Capacity example
-
-```text
-5M new pastes/day × 8 KB avg = 40 GB/day ≈ 1.2 TB/month content → object storage
-Reads 30× writes = 150M reads/day ≈ 1.7k QPS avg, 15–50k QPS peak on hot keys
-```
-
-### 4.4 Architecture
-
-```mermaid
-flowchart TB
-  U[Client] --> CDN[CDN edge for public GETs]
-  CDN --> LB[LB]
-  U --> LB
-  LB --> API[Paste API]
-  API --> Redis[(Redis LRU<br/>code → body+meta)]
-  API --> PG[(Postgres metadata)]
-  API --> S3[(S3 bodies)]
-  API --> K[Kafka paste.views]
-  K --> Agg[View aggregator]
-  Agg --> PG
-  ID[ID service Redis INCR] --> API
-```
-
-**Architecture narration — say this while pointing:**
-
-- Public GETs terminate at CDN whenever possible; writes and protected reads reach the API.
-- Postgres stores small authoritative metadata while S3 stores large immutable bodies.
-- Redis is the hot mapping/body cache and can be rebuilt.
-- View events leave the request path through Kafka so virality does not create database writes.
-
-### 4.5 Write vs read paths
+## 0. Short interview framework
+
+### A 45-minute rhythm
+
+- 0–5: restate the problem; ask one or two clarifying questions at a time.
+- 5–9: propose measurable NFRs; let the interviewer challenge them.
+- 9–16: add the first entities and lifecycle states.
+- 16–23: define one API at a time, including retries and errors.
+- 23–34: follow the interviewer into the hardest invariant or hot path.
+- 34–41: respond to a scale or failure prompt.
+- 41–45: summarize truth, acceptable staleness, trade-offs, and next step.
+
+### Clarifying bank
+
+Pick only the question that changes your next design choice.
+
+- Who acts: customer, operator, admin, device, or partner?
+- What is the smallest complete v1 journey?
+- What is explicitly out of scope?
+- What are peak QPS, read/write ratio, object size, and retention?
+- Is traffic smooth, viral, event-driven, or reconnect-heavy?
+- Which action cannot be stale?
+- May discovery lag while the final command revalidates?
+- Are client retries expected?
+- Is this single-region, multi-region, or tenant-isolated?
+- What audit, privacy, or deletion obligations matter?
+
+### What the interviewer scores
+
+- You control ambiguity without interrogating the interviewer.
+- Requirements cause design decisions.
+- Entities have keys, states, ownership, and constraints.
+- APIs have retry semantics, status codes, and pagination where needed.
+- You identify the exact correctness boundary.
+- You distinguish authoritative state from derived acceleration.
+- You recover cleanly from a wrong turn or silence.
+- You explain failure behavior and one credible scale path.
+
+### Recovery phrases
+
+- **[If you blank]** “I’m stuck. What is the next user action after this?”
+- **[If you overdraw]** “Let me erase derived pieces and re-anchor on the source of truth.”
+- **[If challenged]** “That assumption is weak. I’ll revise it and state what changes.”
+- **[If time is short]** “I’ll prioritize the critical write, its invariant, and its failure recovery.”
+
+**Draw now:** only the conversation path, not an architecture.
 
 ```mermaid
 flowchart LR
-  subgraph Write
-    W1[POST content] --> W2[Put S3]
-    W2 --> W3[Insert metadata Postgres]
-    W3 --> W4[Warm Redis optional]
-  end
-  subgraph Read
-    R1[GET /{code}] --> R2{Redis?}
-    R2 -->|hit| R3[Return]
-    R2 -->|miss| R4[Postgres + S3]
-    R4 --> R5[Fill Redis]
-    R5 --> R3
-  end
+  P[Prompt] --> C[Clarify]
+  C --> N[NFRs]
+  N --> M[Model]
+  M --> A[One API]
+  A --> I[Invariant]
+  I --> F[Failure]
+  F --> S[Scale]
 ```
 
-**Read/write-path narration — say this while pointing:**
+While drawing say: “I will earn each design layer in this order and pause for redirection.”
 
-- On write, upload the object then publish metadata; orphan objects are garbage-collected if metadata fails.
-- On read, Redis hit returns immediately; miss loads metadata and object, then fills cache.
-- Expiration and visibility are checked before serving, and private content bypasses shared CDN caching.
+---
 
-### 4.6 Schema
+## 1. Parking Lot — full progressive interview
 
-```sql
-CREATE TABLE paste (
-  id            BIGSERIAL PRIMARY KEY,
-  short_code    TEXT UNIQUE NOT NULL,  -- base62
-  user_id       UUID NULL,
-  s3_key        TEXT NOT NULL,
-  size_bytes    INT NOT NULL,
-  visibility    TEXT NOT NULL,         -- public|unlisted|private
-  password_hash TEXT NULL,
-  expires_at    TIMESTAMPTZ NULL,
-  created_at    TIMESTAMPTZ NOT NULL,
-  view_count    BIGINT NOT NULL DEFAULT 0
-);
+### Beat 1 — Restate without designing
+
+**Interviewer:** Design a parking lot.
+
+**You (ask / say / draw):** “I’ll design software that admits a vehicle, assigns capacity, records a stay, and charges at exit. Should I optimize for object modeling or a distributed garage network?”
+
+**Interviewer:** Start with one garage, but show clean objects and discuss scale later.
+
+**You:** “Great. I’ll stay correctness-first and avoid infrastructure until we know the workflow.”
+
+**Board now:**
+- Scope: one garage first
+- Depth: model, APIs, races, then scale
+
+### Beat 2 — Clarify actors
+
+**Interviewer:** What do you need to know?
+
+**You (ask / say / draw):** “Are drivers the only users, or do attendants and operators need workflows too?”
+
+**Interviewer:** Drivers enter and exit; operators configure spots and pricing.
+
+**You:** “I’ll include driver and operator, but keep operator configuration off the critical path.”
+
+**Board now:**
+- Actors: driver, operator
+- Critical path: entry → park → exit
+
+### Beat 3 — Clarify assignment
+
+**You (ask / say / draw):** “Does the system assign an exact spot at entry, or only admit by zone and let the driver choose?”
+
+**Interviewer:** Assign an exact spot.
+
+**You:** “Then spot ownership is the scarce-resource invariant; admission cannot rely only on a counter.”
+
+**Board now:**
+- Exact spot assignment
+- No two active sessions own one spot
+
+### Beat 4 — Clarify vehicle fit
+
+**You (ask / say / draw):** “Which vehicle and spot types matter in v1?”
+
+**Interviewer:** Motorcycle, compact, large, and EV; compatible larger spots may accept smaller vehicles.
+
+**You:** “I’ll model compatibility explicitly rather than bury it in conditionals.”
+
+**Board now:**
+- Vehicle types: motorcycle, compact, large, EV
+- Spot compatibility policy
+
+### Beat 5 — Clarify reservations
+
+**You (ask / say / draw):** “Are advance reservations required, or only drive-up parking?”
+
+**Interviewer:** Drive-up only.
+
+**You:** “Good. A session starts at entry; no time-range booking model yet.”
+
+**Board now:**
+- v1: drive-up only
+- Out: advance reservations
+
+### Beat 6 — Clarify payment
+
+**You (ask / say / draw):** “Do we charge at exit, and should gates open if the payment provider is unavailable?”
+
+**Interviewer:** Charge at exit. Do not trap drivers indefinitely.
+
+**You:** “I’ll separate parking truth from payment truth and include a controlled offline-exit policy.”
+
+**Board now:**
+- Payment at exit
+- Availability policy: safe manual/offline override
+
+### Beat 7 — Propose NFRs
+
+**Interviewer:** Give me nonfunctional requirements.
+
+**You (ask / say / draw):** “I propose p95 under 300 ms for entry assignment, under 500 ms excluding payment at exit, 99.9% availability, and strong consistency for spot ownership. Signage may lag five seconds.”
+
+**Interviewer:** Entry must work in under 150 ms at rush hour.
+
+**You:** “I’ll revise entry to p95 150 ms and precompute candidate spots, but the final claim still hits authoritative storage.”
+
+**Board now:**
+- Entry p95 < 150 ms
+- Strong assignment; ≤5 s stale signage
+
+### Beat 8 — Estimate modest scale
+
+**You (ask / say / draw):** “For one garage, may I assume 10,000 spots and 20 entry or exit requests per second at peak?”
+
+**Interviewer:** Yes, but later imagine 1,000 garages.
+
+**You:** “At one garage this is not a throughput problem; correctness and device reliability dominate.”
+
+**Board now:**
+- 10k spots, 20 gate commands/s
+- Later: 1,000 garages
+
+### Beat 9 — Start with two entities
+
+**Interviewer:** Model it.
+
+**You (ask / say / draw):** “I’d start with `Lot` and `Spot`. `Spot(spot_id, lot_id, level, type, status, version)` belongs to one lot.”
+
+**Interviewer:** Why put status on Spot?
+
+**You:** “It gives a direct lockable claim point. I’ll distinguish operational status from occupancy as the model grows.”
+
+**Board now:**
+- Lot 1→N Spot
+- Spot has type, location, status, version
+
+### Beat 10 — Add vehicle
+
+**Interviewer:** What arrives?
+
+**You (ask / say / draw):** “A `Vehicle(vehicle_id, plate, jurisdiction, type)`; plate plus jurisdiction is unique where legally usable.”
+
+**Interviewer:** Do you need a permanent vehicle row?
+
+**You:** “Not necessarily. For privacy, it could be session-scoped or tokenized after retention expires.”
+
+**Board now:**
+- Vehicle identity and type
+- Retention/tokenization decision
+
+### Beat 11 — Add the lifecycle row
+
+**Interviewer:** What about the stay?
+
+**You (ask / say / draw):** “I’ll add `ParkingSession(session_id, lot_id, spot_id, vehicle_id, entered_at, exited_at, status)`.”
+
+**Interviewer:** Which row is historical truth?
+
+**You:** “The session records the stay; Spot is the current claim point. Their transition must be atomic.”
+
+**Board now:**
+- Session states: ACTIVE, PAYMENT_PENDING, CLOSED, VOID
+- Spot and active session change together
+
+### Beat 12 — Correct a weak model
+
+**You (ask / say / draw):** “We could infer availability by counting active sessions.”
+
+**Interviewer:** That requires a scan and races with assignment. Is that your plan?
+
+**You:** “No, that is weak. I’ll keep current spot state for lockable decisions, with the session as audit history and a constraint preventing multiple active claims.”
+
+**Board now:**
+- Corrected: explicit current spot state
+- Constraint backs up application logic
+
+### Beat 13 — Draw the earned ERD
+
+**Interviewer:** Show the relationships.
+
+**You (ask / say / draw):** “Now we have enough nouns to draw the core, but not payment yet.”
+
+**Draw now:** the minimum parking model.
+
+```mermaid
+erDiagram
+  LOT ||--o{ SPOT : contains
+  LOT ||--o{ PARKING_SESSION : records
+  SPOT ||--o{ PARKING_SESSION : hosts
+  VEHICLE ||--o{ PARKING_SESSION : makes
+  LOT { uuid lot_id PK }
+  SPOT { uuid spot_id PK
+         string type
+         string status
+         int version }
+  VEHICLE { uuid vehicle_id PK
+            string plate_token
+            string type }
+  PARKING_SESSION { uuid session_id PK
+                    uuid spot_id FK
+                    string status
+                    timestamp entered_at
+                    timestamp exited_at }
 ```
 
-### 4.7 Viral key protection
+While drawing say: “The mutable scarcity boundary is one Spot; Session preserves the lifecycle.”
 
-1. Redis + CDN for public pastes  
-2. Request coalescing (singleflight) on cache miss  
-3. Soft rate limit per IP on POST  
-4. View counts async (don’t write Postgres on every GET)  
-5. Optional: replicate hot object to memory on multiple edges  
+**Board now:**
+- Core ERD
+- Payment deliberately deferred
 
-### 4.8 Sequence (cache miss under load)
+### Beat 14 — Define compatibility
+
+**Interviewer:** How do you choose a spot?
+
+**You (ask / say / draw):** “I’ll define a ranked compatibility table, for example compact prefers compact then large; EV requires charger capability.”
+
+**Interviewer:** Why ranking?
+
+**You:** “It prevents wasting flexible spots and makes operator policy data-driven.”
+
+**Board now:**
+- Compatibility(vehicle_type, spot_type, rank)
+- Candidate query ordered by rank and walking distance
+
+### Beat 15 — First API only
+
+**Interviewer:** Give me the entry API.
+
+**You (ask / say / draw):** “First endpoint: `POST /lots/{lotId}/sessions` with plate token, vehicle type, gate ID, and `Idempotency-Key`.”
+
+**Interviewer:** Response?
+
+**You:** “`201 {sessionId, spotId, level, directions}`; `409 LOT_FULL`; a replay returns the original result.”
+
+```json
+{"plateToken":"tok_7f","vehicleType":"COMPACT","gateId":"north-2"}
+```
+
+**Board now:**
+- Create-session command
+- 201, 409, idempotent replay
+
+### Beat 16 — Retry challenge
+
+**Interviewer:** The gate times out and retries. What happens?
+
+**You (ask / say / draw):** “The key is unique per lot and operation. In the same transaction as assignment, I persist `RequestDedup(key, response_ref)`.”
+
+**Interviewer:** What if the first request is still running?
+
+**You:** “The duplicate waits briefly or receives `202 IN_PROGRESS` with a status URL; it never allocates another spot.”
+
+**Board now:**
+- Unique `(lot_id, idempotency_key)`
+- Replay or 202 while in progress
+
+### Beat 17 — Exit API
+
+**Interviewer:** Add exit.
+
+**You (ask / say / draw):** “`POST /sessions/{id}/checkout` starts pricing and payment; `POST /sessions/{id}/close` is internal after payment or override.”
+
+**Interviewer:** Why not one endpoint?
+
+**You:** “The provider can be slow or ambiguous. Separating intent from final closure exposes the lifecycle.”
+
+**Board now:**
+- Checkout command
+- Internal close after settled payment/override
+
+### Beat 18 — Add pricing and payment entities
+
+**Interviewer:** Model money now.
+
+**You (ask / say / draw):** “Add immutable `RatePlan` versions and `PaymentAttempt(payment_id, session_id, amount, provider_ref, status)`.”
+
+**Interviewer:** Why version rates?
+
+**You:** “A closed session must reproduce the price applied at entry or checkout even after operator edits.”
+
+**Board now:**
+- Versioned RatePlan
+- PaymentAttempt states and provider reference
+
+### Beat 19 — Two users claim the last EV spot
+
+**Interviewer:** Two gates assign the last EV spot simultaneously. Walk me through it.
+
+**You (ask / say / draw):** “Candidate lookup may race. Each request then tries to lock or conditionally update that exact Spot from AVAILABLE to OCCUPIED.”
+
+**Interviewer:** Which approach do you choose?
+
+**You:** “At this scale, `SELECT … FOR UPDATE SKIP LOCKED`, recheck compatibility, insert Session, update Spot, commit.”
+
+**Board now:**
+- Candidate search is advisory
+- Locked Spot row is authoritative
+
+### Beat 20 — Draw the transaction
+
+**Interviewer:** Show the race.
+
+**Draw now:** the last-spot sequence.
 
 ```mermaid
 sequenceDiagram
-  participant C1 as Client1
-  participant C2 as Client2
-  participant A as API
-  participant L as Singleflight lock
-  participant R as Redis
-  participant S as S3
-
-  C1->>A: GET /xY9
-  C2->>A: GET /xY9
-  A->>R: MISS
-  A->>L: acquire code=xY9
-  Note over L: C1 loads; C2 waits
-  A->>S: GET object
-  A->>R: SET ttl
-  L-->>A: release + share result
-  A-->>C1: 200
-  A-->>C2: 200
-```
-
-**Cache-miss sequence narration — say this while pointing:**
-
-- Two misses for one code collapse behind a per-key singleflight lock.
-- Only the winner reads S3 and populates Redis; waiters share the result.
-- The lock is short-lived coordination, not ownership; timeout falls back safely.
-
-### 4.9 Close
-
-> “Split metadata and blob storage. The viral path is cache and CDN. The database never stores the body and never sees per-read writes.”
-
-
-### 4.A What the interviewer is grading
-
-- Frame Pastebin / Viral Text around the user journey and explicitly name the authoritative state.
-- Model the core resource—short-code namespace and content visibility—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a short code resolves to one immutable content object and expired/private content is never served from stale cache.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: hot reads may reach 50k QPS; create remains moderate.
-- Explain the trade-off: serve immutable public content at the edge but authorize private reads at origin.
-- Walk through failure recovery for a viral cache miss, alias collision, expiration, or object upload succeeding before metadata.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 4.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Pastebin / Viral Text by first fixing the v1 journey, scale, and consistency boundary. The critical resource is short-code namespace and content visibility, and my non-negotiable invariant is that a short code resolves to one immutable content object and expired/private content is never served from stale cache. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume hot reads may reach 50k QPS; create remains moderate. The key trade-off is to serve immutable public content at the edge but authorize private reads at origin. After the happy path I’ll test retries, concurrency, and a viral cache miss, alias collision, expiration, or object upload succeeding before metadata. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 4.C Deep explanation of the hard invariant
-
-**Invariant:** A short code resolves to one immutable content object and expired/private content is never served from stale cache.
-
-A short code is a public capability: once issued, it must not resolve to somebody else’s object, and an expired or private paste must not leak through a stale shared cache. A code collision silently redirecting to the wrong body is data corruption; serving after ACL or expiry change is a confidentiality failure.
-
-Reserve the code with a database `UNIQUE` constraint, not a probabilistic precheck. Store immutable bodies under versioned object keys and publish metadata only after upload succeeds; garbage-collect orphan objects if publication fails. Cache visibility and expiry with the value, use TTLs bounded by policy changes, and purge CDN entries on delete. Private reads always authorize at origin.
-
-### 4.D Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 4.E Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Postgres metadata plus versioned object storage owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a short code resolves to one immutable content object and expired/private content is never served from stale cache. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for short-code namespace and content visibility. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 4.F Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps Postgres metadata plus versioned object storage authoritative for short-code namespace and content visibility. The hard guarantee is that a short code resolves to one immutable content object and expired/private content is never served from stale cache, enforced atomically rather than inferred from cache. The main path meets hot reads may reach 50k QPS; create remains moderate, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 5. Elevator System (C3 OOD) — Full Playbook
-
-### 5.1 Restatement
-
-> “Simulate elevators serving hall and cabin calls efficiently and safely. This is OOD + scheduling, not cloud architecture.”
-
-### 5.2 Clarify
-
-Floors? Elevator count? Max capacity? Peak-mode (up-peak morning)? Express elevators? Door timing?
-
-### 5.3 Class diagram (detailed)
-
-```mermaid
-classDiagram
-  direction TB
-  class Building {
-    +int floors
-    +ElevatorController controller
-  }
-  class ElevatorController {
-    -List~Elevator~ elevators
-    -Queue~HallCall~ pending
-    +hallCall(floor, Direction dir)
-    +cabinCall(elevatorId, floor)
-    +tick(now)
-    -assign(HallCall): Elevator
-    -cost(Elevator, HallCall): score
-  }
-  class Elevator {
-    +id
-    +currentFloor
-    +Direction direction
-    +ElevatorState state
-    +SortedSet upStops
-    +SortedSet downStops
-    +int load
-    +int capacity
-    +addStop(floor)
-    +step()
-    +openDoor()
-    +closeDoor()
-  }
-  class HallCall {
-    +int floor
-    +Direction direction
-    +timestamp t
-  }
-  class CabinCall {
-    +int elevatorId
-    +int floor
-  }
-  class Direction {
-    <<enum>>
-    UP
-    DOWN
-    IDLE
-  }
-  class ElevatorState {
-    <<enum>>
-    IDLE
-    MOVING
-    DOOR_OPEN
-    MAINTENANCE
-  }
-  Building --> ElevatorController
-  ElevatorController "1" --> "*" Elevator
-  ElevatorController --> HallCall
-  Elevator --> CabinCall
-```
-
-**Class-diagram narration — say this while pointing:**
-
-- Building composes one Controller; the Controller owns assignment policy, not motor mechanics.
-- Each Elevator owns its stops, state, load, and safe local transitions.
-- HallCall is unassigned demand; CabinCall targets a specific car.
-- Enums make illegal direction/state combinations visible and testable.
-
-### 5.4 LOOK scheduling
-
-```mermaid
-flowchart TD
-  Call[Hall call floor 8 UP] --> Eval[For each elevator compute cost]
-  Eval --> C1[Same direction & ahead: distance]
-  Eval --> C2[Opposite direction: finish current + distance]
-  Eval --> C3[Idle: absolute distance]
-  C1 --> Min[Pick min cost with capacity check]
-  Min --> Assign[Insert 8 into upStops]
-  Assign --> Run[Elevator continues UP serving ascending stops]
-  Run --> Rev[If upStops empty → serve downStops or IDLE]
-```
-
-**Scheduling-diagram narration — say this while pointing:**
-
-- Every hall call is scored against all eligible elevators.
-- Same-direction calls ahead are cheap; opposite-direction calls include the remaining route.
-- Capacity and maintenance filter candidates before minimum cost wins.
-- LOOK serves ordered stops, reverses when the current direction empties, and aging prevents starvation.
-
-### 5.5 Per-tick behavior
-
-```mermaid
-stateDiagram-v2
-  [*] --> IDLE
-  IDLE --> MOVING: stops non-empty
-  MOVING --> DOOR_OPEN: currentFloor in stops
-  DOOR_OPEN --> MOVING: after dwell, stops remain
-  DOOR_OPEN --> IDLE: no stops
-  MOVING --> MAINTENANCE: fault
-  IDLE --> MAINTENANCE: fault
-  MAINTENANCE --> IDLE: cleared
-```
-
-**State-diagram narration — say this while pointing:**
-
-- Only closed doors permit MOVING; arrival moves to DOOR_OPEN.
-- A dwell timer closes doors and chooses MOVING or IDLE based on pending stops.
-- Faults enter MAINTENANCE from safe states and require an explicit clear.
-
-### 5.6 Threading model
-
-* **Single-threaded simulator:** `controller.tick()` advances all elevators — easiest in interview.  
-* **Actor model:** each elevator mailbox — mention as production variant.
-
-### 5.7 APIs / methods
-
-```text
-POST hallCall(floor, direction)
-POST cabinCall(elevatorId, floor)
-GET  status() -> [{id, floor, direction, state, stops}]
-tick() // for simulation
-```
-
-### 5.8 Follow-ups
-
-| Q | A |
-|---|---|
-| Starvation? | Aging: increase priority of long-waiting hall calls. |
-| Crowded car? | Reject cabin calls when at capacity; skip hall assign if load high. |
-| Emergency? | Clear stops; go to designated floor; state=MAINTENANCE. |
-
-### 5.9 Close
-
-> “Classes: Building, Controller, Elevator, Call. LOOK assignment by cost. Tick-based simulation keeps reasoning simple.”
-
-
-### 5.A What the interviewer is grading
-
-- Frame Elevator System around the user journey and explicitly name the authoritative state.
-- Model the core resource—elevator state machine and stop ownership—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: an elevator never moves with doors open and every accepted call is either scheduled or explicitly rejected.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: deterministic safe transitions matter more than distributed throughput.
-- Explain the trade-off: use a single-threaded tick model for clarity, then discuss actor-based production control.
-- Walk through failure recovery for simultaneous calls, starvation, overload, door obstruction, or a sensor fault.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 5.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Elevator System by first fixing the v1 journey, scale, and consistency boundary. The critical resource is elevator state machine and stop ownership, and my non-negotiable invariant is that an elevator never moves with doors open and every accepted call is either scheduled or explicitly rejected. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume deterministic safe transitions matter more than distributed throughput. The key trade-off is to use a single-threaded tick model for clarity, then discuss actor-based production control. After the happy path I’ll test retries, concurrency, and simultaneous calls, starvation, overload, door obstruction, or a sensor fault. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 5.C Deep explanation of the hard invariant
-
-**Invariant:** An elevator never moves with doors open and every accepted call is either scheduled or explicitly rejected.
-
-The physical safety invariant dominates scheduling efficiency: motion and open doors are mutually exclusive, and every accepted request remains represented until served or cancelled. If state changes can interleave freely, a controller may command motion during a door obstruction or lose a hall call while reassigning it.
-
-In the interview simulator, one event-loop thread owns all transitions. `step()` checks guards such as `state == MOVING && doorsClosed`; door sensors can extend dwell but never request motion. Assignment either inserts the call into exactly one elevator’s ordered stop set or leaves it in the pending queue. In production, a certified local safety controller enforces hardware interlocks even if the fleet scheduler fails.
-
-### 5.D Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 5.E Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. The controller/elevator in-memory state in the simulation owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve an elevator never moves with doors open and every accepted call is either scheduled or explicitly rejected. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for elevator state machine and stop ownership. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 5.F Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps the controller/elevator in-memory state in the simulation authoritative for elevator state machine and stop ownership. The hard guarantee is that an elevator never moves with doors open and every accepted call is either scheduled or explicitly rejected, enforced atomically rather than inferred from cache. The main path meets deterministic safe transitions matter more than distributed throughput, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 6. Ticket / Event Booking (Ticketmaster pattern)
-
-### 6.1 Architecture
-
-```mermaid
-flowchart TB
-  User --> API[Booking API]
-  API --> Seats[(Seat inventory Postgres)]
-  API --> Redis[(Hold TTL keys)]
-  API --> Pay[Payments]
-  Pay -->|webhook| API
-  Exp[Expiry worker] --> Seats
-  Exp --> Redis
-  API --> Wait[Optional waitlist service]
-```
-
-**Architecture narration — say this while pointing:**
-
-- Booking API is the only writer of seat state.
-- Postgres arbitrates seat ownership; Redis stores convenient TTL signals but cannot sell a seat.
-- Payment callback confirms or compensates the held order.
-- Expiry worker conditionally returns still-held seats; waiting room limits admitted contenders.
-
-### 6.2 Seat state machine
-
-```mermaid
-stateDiagram-v2
-  [*] --> Available
-  Available --> Held: hold
-  Held --> Available: TTL expire / release
-  Held --> Sold: payment success
-  Sold --> [*]
-```
-
-**State-diagram narration — say this while pointing:**
-
-- Available can become Held only through an atomic claim.
-- Held has an owner and deadline; confirmation checks both before Sold.
-- Expiry and payment race through conditional transitions, so only one wins.
-
-### 6.3 Deep dive
-
-Hold seats with `SELECT … FOR UPDATE` (or CAS status) for 10 minutes → pay → mark sold. Same scarce-resource pattern as parking/rental; cite this when interviewer asks about races.
-
-### 6.4 Hot-event scale
-
-* Shard inventory by section  
-* Queue waiting room (virtual queue) before hold API  
-* Idempotent holds per user+event  
-
-
-### 6.A What the interviewer is grading
-
-- Frame Ticket Booking around the user journey and explicitly name the authoritative state.
-- Model the core resource—event seat—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a seat is never sold twice and a hold can become sold only for its owner before expiry.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: hot onsales create extreme bursts; hold must complete in hundreds of milliseconds.
-- Explain the trade-off: protect correctness in SQL and shed load with a waiting room.
-- Walk through failure recovery when two buyers click the same seat, payment is retried, or expiry races with confirmation.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 6.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Ticket Booking by first fixing the v1 journey, scale, and consistency boundary. The critical resource is event seat, and my non-negotiable invariant is that a seat is never sold twice and a hold can become sold only for its owner before expiry. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume hot onsales create extreme bursts; hold must complete in hundreds of milliseconds. The key trade-off is to protect correctness in SQL and shed load with a waiting room. After the happy path I’ll test retries and concurrency when two buyers click the same seat, payment is retried, or expiry races with confirmation. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 6.C Clarifying questions, APIs, and schema
-
-**Ask before drawing:**
-
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
-
-**API surface to put on the board:**
-
-- list seats, create hold, confirm purchase, release hold, and fetch order.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
-
-**Schema spine:**
-
-- Event, Section, Seat(event_id, seat_no, status, version), Hold(user_id, expires_at, idempotency_key), Order, Payment.
-- Put tenant/owner scope into every primary lookup involving event seat.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
-
-### 6.D Deep explanation of the hard invariant
-
-**Invariant:** A seat is never sold twice and a hold can become sold only for its owner before expiry.
-
-This exists because two buyers click the same seat, payment retries, or expiry races with confirmation can make two valid-looking requests overlap in time. A read-then-write check in application code is insufficient: both requests can observe the old state before either commits. If the invariant fails, downstream compensation is often impossible or expensive—two people own one scarce thing, unauthorized context leaks, a side effect runs twice, or historical data becomes untrustworthy.
-
-Defend it at the narrowest authoritative boundary: transactional seat inventory in Postgres. Use one atomic conditional update, row lock, uniqueness/exclusion constraint, sequence allocator, or lease according to the model. Treat a constraint conflict as an expected `409`, make retry identity durable, and keep cache/index state outside the proof. Then add an invariant monitor and repair workflow; the database guard prevents known races, while telemetry catches bugs and operational drift.
-
-### 6.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 6.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Transactional seat inventory in postgres owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a seat is never sold twice and a hold can become sold only for its owner before expiry. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for event seat. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 6.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps transactional seat inventory in Postgres authoritative for event seat. The hard guarantee is that a seat is never sold twice and a hold can become sold only for its owner before expiry, enforced atomically rather than inferred from cache. The main path meets hot onsales create extreme bursts; hold must complete in hundreds of milliseconds, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 7. Ride-Sharing
-
-### 7.1 Architecture
-
-```mermaid
-flowchart TB
-  Rider --> Trip[Trip Service]
-  Driver --> Loc[Location Service]
-  Driver --> Trip
-  Loc --> GEO[(Redis GEO + status)]
-  Trip --> PG[(Postgres trips)]
-  Trip --> GEO
-  Trip --> Offer[Offer Pub/Sub]
-  Offer --> Driver
-  Trip --> Fare[Fare]
-  Trip --> Pay[Payments]
-  Trip --> Map[Maps ETA provider]
-```
-
-**Architecture narration — say this while pointing:**
-
-- Drivers stream locations to Location Service, which maintains a short-lived GEO projection.
-- Trip Service owns durable trip lifecycle and asks GEO only for candidates.
-- Offers fan out over pub/sub; Fare, Maps, and Payments are supporting services.
-- The database claim, not push ordering, decides the winner.
-
-### 7.2 Matching sequence (detailed)
-
-```mermaid
-sequenceDiagram
-  autonumber
-  participant R as Rider
-  participant T as Trip
-  participant G as Redis GEO
-  participant D as Driver apps
+  participant G1 as Gate A
+  participant G2 as Gate B
+  participant S as Session Service
   participant DB as Postgres
-
-  R->>T: POST /trips {pickup, dropoff}
-  T->>DB: INSERT trip status=requested
-  T->>G: GEOSEARCH radius=3km available drivers
-  T->>D: push offers to top K
-  D->>T: POST /trips/{id}/accept
-  T->>DB: UPDATE trips SET driver_id=$d, status='assigned'<br/>WHERE id=$t AND status='requested'
-  alt rowcount=1
-    T->>G: set driver status=busy
-    T-->>D: success
-    T-->>R: driver assigned + ETA
-  else rowcount=0
-    T-->>D: 409 taken
-  end
+  G1->>S: create session EV
+  G2->>S: create session EV
+  S->>DB: lock candidate EV spot
+  DB-->>S: spot-9 locked
+  S->>DB: insert ACTIVE session + occupy spot
+  S->>DB: commit
+  S->>DB: second lock query
+  DB-->>S: no compatible spot
+  S-->>G1: 201 spot-9
+  S-->>G2: 409 LOT_FULL
 ```
 
-**Matching-sequence narration — say this while pointing:**
+While drawing say: “The loser does not trust its old read; it performs a fresh authoritative claim.”
 
-- Trip is persisted before discovery so retries have a stable identity.
-- GEO returns nearby, fresh, available candidates and the service offers to a bounded top K.
-- Every acceptance executes the same conditional update; exactly one row count is one.
-- Losers receive 409 and driver availability is repaired from trip truth if cache updates fail.
+**Board now:**
+- One transaction owns assignment
+- Deterministic loser response
 
-### 7.3 Schema highlights
+### Beat 21 — Database backstop
 
-```text
-Trip(id, rider_id, driver_id, status, pickup_geopoint, dropoff_geopoint,
-     requested_at, assigned_at, fare_cents, version)
-DriverStatus in Redis: {available|offered|busy|offline}, last_location, geohash
+**Interviewer:** What if application code forgets the lock?
+
+**You (ask / say / draw):** “I want a database backstop: one active session per spot, implemented with a partial unique index on `spot_id WHERE status IN ('ACTIVE','PAYMENT_PENDING')`.”
+
+**Interviewer:** Is the Spot status then redundant?
+
+**You:** “Derived but useful for a direct claim; a reconciler detects disagreement and the constraint protects history.”
+
+**Board now:**
+- Partial unique active-session index
+- Reconciliation invariant check
+
+### Beat 22 — Payment crash point
+
+**Interviewer:** Payment succeeds, then your service crashes before closing the session.
+
+**You (ask / say / draw):** “A provider webhook keyed by provider reference updates PaymentAttempt idempotently. A reconciler finds settled payments with unclosed sessions.”
+
+**Interviewer:** Could it charge twice?
+
+**You:** “Provider requests also use an idempotency key derived from session plus checkout attempt.”
+
+**Board now:**
+- Webhook + reconciliation
+- Provider-side idempotency
+
+### Beat 23 — Draw the state machine
+
+**Draw now:** session and payment-aware transitions.
+
+```mermaid
+stateDiagram-v2
+  [*] --> ACTIVE: entry committed
+  ACTIVE --> PAYMENT_PENDING: checkout
+  PAYMENT_PENDING --> CLOSED: paid or override
+  PAYMENT_PENDING --> ACTIVE: payment declined
+  ACTIVE --> VOID: operator correction
+  CLOSED --> [*]
+  VOID --> [*]
 ```
 
-### 7.4 Hard problems to mention
+While drawing say: “Only conditional transitions are legal; stale commands receive 409.”
 
-* Offer stampede → limit concurrent offers; short offer TTL  
-* Ghost drivers → location freshness heartbeat  
-* Surge pricing → separate pricing service reading demand metrics  
-* Exact fare → finalize on trip end; authorize hold earlier  
+**Interviewer:** What expires?
 
+**You:** “Nothing in drive-up parking. A physical sensor mismatch creates an alert, not automatic ownership changes.”
 
-### 7.A What the interviewer is grading
+**Board now:**
+- Explicit legal transitions
+- Sensors do not silently rewrite truth
 
-- Frame Ride-Sharing around the user journey and explicitly name the authoritative state.
-- Model the core resource—trip-driver assignment—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a trip has at most one assigned driver and a driver has at most one active trip.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: matching should feel sub-second while GPS can be a few seconds stale.
-- Explain the trade-off: use an approximate GEO index for candidates but an atomic database claim for assignment.
-- Walk through failure recovery for multiple drivers accept, a ghost driver appears nearby, or location updates arrive out of order.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
+### Beat 24 — Ten-times traffic
 
-### 7.B How to open (60 seconds)
+**Interviewer:** Now 1,000 garages and ten times traffic.
 
-**Say this:**
+**You (ask / say / draw):** “I partition ownership by `lot_id`; each garage’s writes route to one home shard. Read-only discovery and signage can use replicas or Redis.”
 
-> “I’ll design Ride-Sharing by first fixing the v1 journey, scale, and consistency boundary. The critical resource is trip-driver assignment, and my non-negotiable invariant is that a trip has at most one assigned driver and a driver has at most one active trip. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume matching should feel sub-second while GPS can be a few seconds stale. The key trade-off is to use an approximate GEO index for candidates but an atomic database claim for assignment. After the happy path I’ll test retries, concurrency, and multiple drivers accept, a ghost driver appears nearby, or location updates arrive out of order. If you prefer, I can go deeper on schema and races or on distributed scaling.”
+**Interviewer:** Why not global active-active writes?
 
-### 7.C Clarifying questions, APIs, and schema
+**You:** “There is no need for cross-garage assignment transactions. Local ownership avoids conflict complexity.”
 
-**Ask before drawing:**
+**Board now:**
+- Partition key: lot_id
+- Local writes; derived global reporting
 
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
+### Beat 25 — Earn the final architecture and close
 
-**API surface to put on the board:**
+**Interviewer:** Draw the scaled system and summarize.
 
-- request trip, accept offer, driver location heartbeat, start, complete, and cancel.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
+**Draw now:** only boxes justified by prior beats.
 
-**Schema spine:**
+```mermaid
+flowchart LR
+  Gate[Gate / Kiosk] --> GW[API Gateway]
+  GW --> SS[Session Service]
+  SS --> DB[(Lot-partitioned Postgres)]
+  SS --> Pay[Payment Provider]
+  DB --> Outbox[Outbox Relay]
+  Outbox --> Bus[Event Bus]
+  Bus --> Sign[Signage Projection]
+  Bus --> Audit[Audit / Analytics]
+  Sensor[Spot Sensors] --> Bus
+  Bus --> Recon[Reconciler]
+  Recon --> DB
+```
 
-- Trip(rider_id, driver_id, status, pickup, dropoff, version), Driver, DriverAvailability, Offer(expires_at), Payment.
-- Put tenant/owner scope into every primary lookup involving trip-driver assignment.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
+While drawing say: “Postgres owns spot and session state; projections may lag; outbox makes committed changes publishable.”
 
-### 7.D Deep explanation of the hard invariant
+**You:** “The key invariant is one active session per spot. Assignment is a short transaction on one spot, retries are idempotent, payment ambiguity is reconciled, and scaling follows lot ownership.”
 
-**Invariant:** A trip has at most one assigned driver and a driver has at most one active trip.
+**Board now:**
+- Source of truth and derived projections
+- Invariant, failure recovery, scale path
 
-This exists because multiple drivers accept, a ghost driver appears nearby, or location updates arrive out of order can make two valid-looking requests overlap in time. A read-then-write check in application code is insufficient: both requests can observe the old state before either commits. If the invariant fails, downstream compensation is often impossible or expensive—two people own one scarce thing, unauthorized context leaks, a side effect runs twice, or historical data becomes untrustworthy.
-
-Defend it at the narrowest authoritative boundary: conditional trip and driver state in the transactional store. Use one atomic conditional update, row lock, uniqueness/exclusion constraint, sequence allocator, or lease according to the model. Treat a constraint conflict as an expected `409`, make retry identity durable, and keep cache/index state outside the proof. Then add an invariant monitor and repair workflow; the database guard prevents known races, while telemetry catches bugs and operational drift.
-
-### 7.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 7.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Conditional trip and driver state in the transactional store owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a trip has at most one assigned driver and a driver has at most one active trip. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for trip-driver assignment. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 7.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps conditional trip and driver state in the transactional store authoritative for trip-driver assignment. The hard guarantee is that a trip has at most one assigned driver and a driver has at most one active trip, enforced atomically rather than inferred from cache. The main path meets matching should feel sub-second while GPS can be a few seconds stale, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
+**[Interviewer tip]** Parking is testing whether you can resist starting with classes or Kafka and instead discover the scarce-resource boundary.
 
 ---
 
-## 8. Dropbox-like File Storage
+## 2. Car Rental — full progressive interview
 
-### 8.1 Architecture
+### Beat 1 — Frame the product
+
+**Interviewer:** Design an enterprise car-rental system.
+
+**You (ask / say / draw):** “I’ll begin with search, reserve, pickup, and return. Is this exact-vehicle booking or vehicle-class booking?”
+
+**Interviewer:** Customers reserve a class; a vehicle is assigned near pickup.
+
+**You:** “That separates inventory promise from physical allocation.”
+
+**Board now:**
+- Journey: search → reserve → pickup → return
+- Reservation targets class, not VIN
+
+### Beat 2 — Clarify geography
+
+**You (ask / say / draw):** “Can pickup and return locations differ?”
+
+**Interviewer:** Yes.
+
+**You:** “Then location availability and fleet movement are first-class; one-way fees can be pricing policy.”
+
+**Board now:**
+- Pickup and return branches
+- One-way rental supported
+
+### Beat 3 — Clarify time and cancellation
+
+**You (ask / say / draw):** “Are reservations time ranges, and can customers cancel?”
+
+**Interviewer:** Yes; free cancellation until 24 hours before pickup.
+
+**You:** “We need overlap correctness and versioned policy evaluation.”
+
+**Board now:**
+- Half-open interval `[start,end)`
+- Cancellation policy
+
+### Beat 4 — Clarify overbooking
+
+**You (ask / say / draw):** “May the business overbook a class based on expected no-shows?”
+
+**Interviewer:** Not in v1.
+
+**You:** “Then confirmed demand cannot exceed allocatable class inventory for the interval.”
+
+**Board now:**
+- v1: no intentional overbooking
+- Hard inventory promise
+
+### Beat 5 — NFRs and challenge
+
+**You (ask / say / draw):** “Search p95 300 ms, booking p95 700 ms excluding payment, 99.95% booking availability, and strong booking consistency. Search may lag 10 seconds.”
+
+**Interviewer:** Search traffic is 1,000 times booking traffic.
+
+**You:** “I’ll derive a search index, but booking always revalidates against authoritative inventory.”
+
+**Board now:**
+- Search: fast, stale ≤10 s
+- Booking: strong and revalidated
+
+### Beat 6 — Capacity
+
+**You (ask / say / draw):** “Assume 5 million vehicles, 20,000 branches, 50k peak search QPS, and 50 booking QPS?”
+
+**Interviewer:** Reasonable.
+
+**You:** “Search needs horizontal read scale; transactional booking volume is modest but contested by branch, class, and day.”
+
+**Board now:**
+- 50k search QPS
+- 50 booking QPS
+
+### Beat 7 — Begin entities
+
+**Interviewer:** Model the fleet.
+
+**You (ask / say / draw):** “Start with `Branch`, `VehicleClass`, and `Vehicle(VIN, class_id, current_branch, status)`.”
+
+**Interviewer:** What statuses?
+
+**You:** “AVAILABLE, ASSIGNED, RENTED, MAINTENANCE, TRANSIT, RETIRED.”
+
+**Board now:**
+- Branch, VehicleClass, Vehicle
+- Physical fleet lifecycle
+
+### Beat 8 — Add reservation
+
+**You (ask / say / draw):** “Add `Reservation(id, customer, pickup_branch, return_branch, class_id, start, end, status, quoted_price)`.”
+
+**Interviewer:** Does it point to a vehicle?
+
+**You:** “Optional `assigned_vehicle_id`, populated near pickup.”
+
+**Board now:**
+- Reservation promises a class
+- Vehicle assignment is later
+
+### Beat 9 — Wrong turn on inventory
+
+**You (ask / say / draw):** “We can count vehicles and subtract overlapping reservations on every booking.”
+
+**Interviewer:** Across long ranges and high contention?
+
+**You:** “That is expensive and lock-heavy. I’ll introduce daily inventory buckets per branch and class for the booking horizon.”
+
+**Board now:**
+- Corrected: InventoryDay(branch, class, date)
+- Capacity and reserved_count
+
+### Beat 10 — Draw the model
+
+**Draw now:** reservation promise versus physical allocation.
 
 ```mermaid
-flowchart TB
-  Client --> Meta[Metadata Service]
-  Client --> S3[S3 presigned PUT/GET]
-  Meta --> PG[(Postgres tree + versions)]
-  Meta --> Redis[(Locks / sessions)]
-  Meta --> S3
-  Search[Indexer] --> PG
-  Search --> OS[(OpenSearch filenames)]
-  Share[Share Service] --> PG
-  CDN --> S3
+erDiagram
+  BRANCH ||--o{ VEHICLE : holds
+  VEHICLE_CLASS ||--o{ VEHICLE : classifies
+  VEHICLE_CLASS ||--o{ INVENTORY_DAY : budgets
+  BRANCH ||--o{ INVENTORY_DAY : owns
+  VEHICLE_CLASS ||--o{ RESERVATION : requested
+  RESERVATION o|--o| VEHICLE : assigned
+  RESERVATION { uuid reservation_id PK
+                date start_date
+                date end_date
+                string status }
+  INVENTORY_DAY { uuid branch_id PK
+                  uuid class_id PK
+                  date day PK
+                  int capacity
+                  int reserved_count }
 ```
 
-**Architecture narration — say this while pointing:**
+While drawing say: “InventoryDay protects promises; Vehicle represents operational reality.”
 
-- Metadata Service handles namespace and versions; clients transfer bytes directly with presigned URLs.
-- Postgres owns the tree and permissions; S3 owns immutable content.
-- Redis coordinates short sessions, OpenSearch is a rebuildable filename projection, and CDN accelerates downloads.
-- Sharing checks permissions before issuing a download capability.
+**Board now:**
+- Booking ledger and fleet model
+- Half-open date semantics
 
-### 8.2 Upload sequence
+### Beat 11 — Search API
+
+**Interviewer:** Give me search.
+
+**You (ask / say / draw):** “`GET /availability?pickup=...&return=...&start=...&end=...` returns classes, estimate, and an opaque quote token.”
+
+**Interviewer:** Is the token a reservation?
+
+**You:** “No. It freezes pricing inputs briefly, not inventory.”
+
+**Board now:**
+- Search response + quote token
+- No inventory hold yet
+
+### Beat 12 — Booking API
+
+**Interviewer:** Reserve one.
+
+**You (ask / say / draw):** “`POST /reservations` with class, dates, branches, quote token, and Idempotency-Key.”
+
+**Interviewer:** Response?
+
+**You:** “`201` confirmed, `409 SOLD_OUT`, or `422` for expired/invalid quote.”
+
+**Board now:**
+- Create reservation command
+- Idempotency and explicit errors
+
+### Beat 13 — Range concurrency
+
+**Interviewer:** Two customers take the last compact over overlapping dates.
+
+**You (ask / say / draw):** “In sorted date order, lock each InventoryDay row, verify `reserved_count < capacity`, increment all, and insert Reservation in one transaction.”
+
+**Interviewer:** Why sorted order?
+
+**You:** “Every transaction acquires locks consistently, reducing deadlocks.”
+
+**Board now:**
+- Lock all covered days in date order
+- All-or-nothing increment
+
+### Beat 14 — Draw booking sequence
 
 ```mermaid
 sequenceDiagram
   participant C as Client
+  participant R as Reservation Service
+  participant DB as Inventory DB
+  C->>R: POST /reservations + key
+  R->>DB: lock InventoryDay range
+  DB-->>R: rows + capacities
+  R->>DB: increment days + insert reservation
+  R->>DB: insert outbox event
+  DB-->>R: commit
+  R-->>C: 201 confirmed
+```
+
+While drawing say: “Search is advisory; only this transaction spends inventory.”
+
+**Interviewer:** What if one day is sold out?
+
+**You:** “Rollback all increments and return 409 with alternative classes if available.”
+
+**Board now:**
+- Atomic range booking
+- Outbox after commit
+
+### Beat 15 — Assignment and pickup
+
+**Interviewer:** How do you choose a VIN?
+
+**You (ask / say / draw):** “A pre-pickup worker proposes candidates by class, branch, maintenance status, and mileage balancing; an agent confirms assignment with a version check.”
+
+**Interviewer:** Could the worker be stale?
+
+**You:** “Yes, so assignment conditionally transitions one Vehicle from AVAILABLE to ASSIGNED.”
+
+**Board now:**
+- Candidate assignment is derived
+- Vehicle transition is authoritative
+
+### Beat 16 — Maintenance conflict
+
+**Interviewer:** A vehicle breaks down after assignment.
+
+**You (ask / say / draw):** “Mark it MAINTENANCE, clear assignment, and create a reassignment task. The class promise remains; operations sees a shortage risk.”
+
+**Interviewer:** Automatically downgrade?
+
+**You:** “No silent downgrade. Offer equal-or-better or request customer consent.”
+
+**Board now:**
+- Reassignment workflow
+- Customer-visible policy
+
+### Beat 17 — Payment ambiguity
+
+**Interviewer:** The deposit succeeds but pickup crashes.
+
+**You (ask / say / draw):** “Persist a pickup operation and payment attempt with idempotency. Provider webhooks and a reconciler resume the state transition or refund.”
+
+**Interviewer:** Source of truth?
+
+**You:** “Reservation and rental state are ours; settlement state is confirmed against the provider.”
+
+**Board now:**
+- Durable pickup operation
+- Reconcile external settlement
+
+### Beat 18 — Scale search
+
+**Interviewer:** Search is now 10x.
+
+**You (ask / say / draw):** “Stream inventory and pricing changes into a denormalized index partitioned by region and date bucket; cache popular searches briefly.”
+
+**Interviewer:** Oversell risk?
+
+**You:** “None from search because create revalidates the InventoryDay rows.”
+
+**Board now:**
+- Regional search projection
+- Strong write path unchanged
+
+### Beat 19 — Draw earned architecture
+
+```mermaid
+flowchart LR
+  Web[Web / Agent UI] --> GW[Gateway]
+  GW --> Search[Search Service]
+  GW --> Reserve[Reservation Service]
+  GW --> Fleet[Fleet Service]
+  Search --> IDX[(Search Index)]
+  Reserve --> DB[(Inventory + Reservation DB)]
+  Fleet --> DB
+  DB --> O[Outbox]
+  O --> Bus[Event Bus]
+  Bus --> IDX
+  Bus --> Ops[Operations Tasks]
+```
+
+While drawing say: “The index answers discovery; InventoryDay spends promises; Vehicle transitions control fleet operations.”
+
+**Board now:**
+- Read and write paths separated
+- Shared event-driven projections
+
+### Beat 20 — Close
+
+**Interviewer:** Summarize your trade-off.
+
+**You:** “I traded exact-VIN booking for class-level flexibility. Daily buckets make finite-horizon overlap locking simple, while search can be stale because confirmation revalidates. At larger horizons I would evaluate interval ledgers or coarser buckets.”
+
+**[If you blank]** “Which fact would cause a customer to arrive without a car?” Then trace that invariant.
+
+**Board now:**
+- Promise invariant
+- Horizon/bucket trade-off
+
+---
+
+## 3. Metrics Logging and Aggregation — full progressive interview
+
+### Beat 1 — Clarify the product
+
+**Interviewer:** Design a metrics platform.
+
+**You (ask / say / draw):** “Is the primary use case real-time dashboards, alerting, long-term analytics, or all three?”
+
+**Interviewer:** Dashboards and alerts first; keep 13 months of aggregates.
+
+**You:** “Then ingest durability, bounded freshness, and efficient time-window queries lead.”
+
+**Board now:**
+- v1: dashboards + alerts
+- 13-month aggregate retention
+
+### Beat 2 — Clarify input
+
+**You (ask / say / draw):** “Are inputs counters, gauges, and histograms with labels?”
+
+**Interviewer:** Yes.
+
+**You:** “I’ll normalize all points to tenant, metric, timestamp, value, type, and bounded labels.”
+
+**Board now:**
+- Counter, gauge, histogram
+- Tenant and labels
+
+### Beat 3 — Clarify delivery
+
+**You (ask / say / draw):** “Can agents batch and retry, and are duplicate points acceptable?”
+
+**Interviewer:** Agents batch every ten seconds and may retry.
+
+**You:** “We need idempotent batches or dedupe semantics; exactly-once transport is unnecessary.”
+
+**Board now:**
+- Batched ingest
+- At-least-once with dedupe
+
+### Beat 4 — Clarify cardinality
+
+**You (ask / say / draw):** “What label cardinality should we tolerate?”
+
+**Interviewer:** Customers sometimes send user IDs as labels.
+
+**You:** “I’ll enforce per-tenant series quotas and reject or quarantine explosive labels.”
+
+**Board now:**
+- Cardinality budget
+- Quarantine invalid series
+
+### Beat 5 — NFRs
+
+**You (ask / say / draw):** “Target 2 million points/s, p99 ingest acknowledgment under 250 ms, dashboard freshness under 15 s, query p95 under 2 s, and no acknowledged-batch loss.”
+
+**Interviewer:** Alerts need five-second freshness.
+
+**You:** “I’ll add a streaming alert path; dashboards may retain the 15-second target.”
+
+**Board now:**
+- 2M points/s
+- Alerts <5 s; dashboards <15 s
+
+### Beat 6 — Capacity arithmetic
+
+**You (ask / say / draw):** “At 2M points/s and roughly 30 compressed bytes, raw flow is about 60 MB/s or 5 TB/day before replication.”
+
+**Interviewer:** Does that change the design?
+
+**You:** “Yes: partitioned durable log, compression, tiered retention, and downsampling are required.”
+
+**Board now:**
+- ~5 TB/day raw estimate
+- Tier and downsample
+
+### Beat 7 — Start the data contract
+
+**Interviewer:** Model a point.
+
+**You (ask / say / draw):** “`Point(tenant, metric_id, timestamp, value, labels)`; canonicalized labels determine `series_id`.”
+
+**Interviewer:** Why metric ID?
+
+**You:** “A dictionary avoids repeating long names and supports metadata and quotas.”
+
+**Board now:**
+- Metric dictionary
+- Stable series ID
+
+### Beat 8 — First endpoint
+
+**Interviewer:** Give me ingest.
+
+**You (ask / say / draw):** “`POST /v1/metrics:write` accepts a compressed batch with `batchId`, agent ID, and points.”
+
+**Interviewer:** When do you return 202?
+
+**You:** “After validation and durable log append, not after final aggregation.”
+
+**Board now:**
+- Batch write API
+- ACK boundary: durable append
+
+### Beat 9 — Retry semantics
+
+**Interviewer:** The client retries after a timeout.
+
+**You (ask / say / draw):** “Partition-local dedupe stores `(tenant, agent, batchId)` for the retry horizon. Aggregators also use idempotent window updates.”
+
+**Interviewer:** Forever?
+
+**You:** “No. Batch IDs expire after, say, 24 hours; older duplicates are documented as possible.”
+
+**Board now:**
+- Bounded dedupe
+- Explicit duplicate contract
+
+### Beat 10 — Earn the ingest path
+
+**Draw now:** synchronous acknowledgment and asynchronous processing.
+
+```mermaid
+flowchart LR
+  Agent[Metric Agent] --> Edge[Ingest Edge]
+  Edge --> Validate[Validate + Quota]
+  Validate --> Log[Durable Partitioned Log]
+  Log --> Raw[Raw Writer]
+  Log --> Agg[Window Aggregator]
+  Log --> Alert[Alert Evaluator]
+  Raw --> TS[(Time-series Store)]
+  Agg --> TS
+  Alert --> Notify[Notification Sink]
+```
+
+While drawing say: “The log is the replay boundary; consumers can fail independently.”
+
+**Board now:**
+- Durable fan-out
+- Raw, aggregate, and alert consumers
+
+### Beat 11 — Partitioning
+
+**Interviewer:** What is the partition key?
+
+**You (ask / say / draw):** “Hash `(tenant, series_id)` so one series is ordered while tenants distribute.”
+
+**Interviewer:** One huge tenant?
+
+**You:** “Use many virtual shards per tenant and rate limits; a single hot series still has an intentional owner.”
+
+**Board now:**
+- Ordered per series
+- Virtual tenant shards
+
+### Beat 12 — Late and out-of-order data
+
+**Interviewer:** Points arrive two minutes late.
+
+**You (ask / say / draw):** “Aggregators use event-time windows with a watermark, update recent windows, and emit correction versions.”
+
+**Interviewer:** How late is too late?
+
+**You:** “A tenant policy, perhaps one hour; later points enter raw storage but not alerts.”
+
+**Board now:**
+- Event time + watermark
+- Correction version
+
+### Beat 13 — Aggregation model
+
+**Interviewer:** What do you store?
+
+**You (ask / say / draw):** “Raw samples for seven days, then 1-minute, 1-hour, and 1-day rollups. Histograms merge sketches rather than averaging percentiles.”
+
+**Interviewer:** Good. Why not average p95?
+
+**You:** “Percentiles are not composable; mergeable histograms preserve distributions.”
+
+**Board now:**
+- Multi-resolution retention
+- Mergeable histogram sketches
+
+### Beat 14 — Query API
+
+**Interviewer:** Query it.
+
+**You (ask / say / draw):** “`GET /v1/query_range?expr=...&start=...&end=...&step=...` returns timestamp-value series and partial-data warnings.”
+
+**Interviewer:** How select a rollup?
+
+**You:** “Planner chooses the coarsest resolution no larger than requested step.”
+
+**Board now:**
+- Range query API
+- Resolution-aware planner
+
+### Beat 15 — Query execution
+
+**Draw now:** query fan-out.
+
+```mermaid
+sequenceDiagram
+  participant U as Dashboard
+  participant Q as Query Frontend
   participant M as Metadata
-  participant S as S3
-
-  C->>M: POST /upload-sessions {name, parentId, size, checksum}
-  M-->>C: {sessionId, presignedUrl, parts[]}
-  C->>S: PUT bytes (multipart if large)
-  C->>M: POST /upload-sessions/{id}/complete
-  M->>M: txn: FileNode + FileVersion + dedup by checksum
-  M-->>C: {fileId, version}
+  participant W as Query Workers
+  participant T as TS Store
+  U->>Q: range query
+  Q->>M: resolve labels to series
+  Q->>W: shard subqueries
+  W->>T: read chosen rollups
+  T-->>W: chunks
+  W-->>Q: partial aggregates
+  Q-->>U: merged series + warnings
 ```
 
-**Upload-sequence narration — say this while pointing:**
+While drawing say: “Metadata expansion is bounded; workers enforce time and sample budgets.”
 
-- The initial command reserves metadata intent and returns scoped multipart URLs.
-- The client sends bytes directly to S3 and verifies checksums.
-- Complete is idempotent and transactionally creates the node/version only after object verification.
-- Abandoned upload sessions expire and orphan multipart data is cleaned later.
+**Board now:**
+- Distributed query plan
+- Partial response policy
 
-### 8.3 Metadata schema
+### Beat 16 — Wrong turn on storage
 
-```text
-FileNode(id, parent_id, owner_id, name, type file|folder, is_deleted, unique(parent_id,name))
-FileVersion(id, file_id, s3_key, size, checksum, version_num)
-Share(id, node_id, grantee_id, permission read|write)
-```
+**You (ask / say / draw):** “We can put all samples in Postgres partitions.”
 
-### 8.4 Hard topics
+**Interviewer:** At five terabytes per day?
 
-* Move/rename races → row lock on parent  
-* Sync conflicts → version vectors or LWW + conflict copy  
-* Dedup → content hash  
-* Large files → multipart + checksum per part  
+**You:** “That is not credible for this workload. I’ll use a columnar/time-series store with object storage for cold chunks; relational storage keeps metadata.”
 
+**Board now:**
+- Corrected: specialized sample store
+- Relational metadata only
 
-### 8.A What the interviewer is grading
+### Beat 17 — Backpressure
 
-- Frame Dropbox-like Storage around the user journey and explicitly name the authoritative state.
-- Model the core resource—file metadata version—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a committed file version points to a durable verified blob and sibling names obey the chosen uniqueness policy.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: metadata reads are low latency; large bytes bypass application servers.
-- Explain the trade-off: separate strongly consistent metadata from scalable blob transfer.
-- Walk through failure recovery for upload completion retries, concurrent rename, partial multipart upload, or sync conflict.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
+**Interviewer:** Aggregators fall behind.
 
-### 8.B How to open (60 seconds)
+**You (ask / say / draw):** “The durable log absorbs a bounded backlog. We monitor lag, autoscale consumers, and shed low-priority tenants before exhausting retention.”
 
-**Say this:**
+**Interviewer:** Drop acknowledged data?
 
-> “I’ll design Dropbox-like Storage by first fixing the v1 journey, scale, and consistency boundary. The critical resource is file metadata version, and my non-negotiable invariant is that a committed file version points to a durable verified blob and sibling names obey the chosen uniqueness policy. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume metadata reads are low latency; large bytes bypass application servers. The key trade-off is to separate strongly consistent metadata from scalable blob transfer. After the happy path I’ll test retries, concurrency, and upload completion retries, concurrent rename, partial multipart upload, or sync conflict. If you prefer, I can go deeper on schema and races or on distributed scaling.”
+**You:** “Not silently. If durability capacity is threatened, ingest returns 429/503 before acknowledgment.”
 
-### 8.C Clarifying questions, APIs, and schema
+**Board now:**
+- Lag-based autoscaling
+- Admission control before loss
 
-**Ask before drawing:**
+### Beat 18 — Multi-tenancy
 
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
+**Interviewer:** How do you isolate enterprise tenants?
 
-**API surface to put on the board:**
+**You (ask / say / draw):** “Tenant-scoped auth, per-tenant quotas, encryption keys where required, query budgets, and audit logs. Large tenants can receive dedicated shards.”
 
-- start upload, complete upload, list folder, download, move, delete, and share.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
+**Interviewer:** Noisy neighbor in queries?
 
-**Schema spine:**
+**You:** “Weighted queues and per-tenant concurrency limits.”
 
-- FileNode(parent_id, owner_id, name, type, version), FileVersion(file_id, object_key, checksum, size), UploadSession, Share.
-- Put tenant/owner scope into every primary lookup involving file metadata version.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
+**Board now:**
+- Tenant isolation controls
+- Weighted query scheduling
 
-### 8.D Deep explanation of the hard invariant
+### Beat 19 — Regional failure
 
-**Invariant:** A committed file version points to a durable verified blob and sibling names obey the chosen uniqueness policy.
+**Interviewer:** A region fails.
 
-Completion must never expose metadata that points to missing or corrupt bytes. Conversely, uploading bytes must not make an uncommitted file visible. Concurrent moves and renames must also preserve one coherent namespace; otherwise sync clients oscillate or download a version that cannot be verified.
+**You (ask / say / draw):** “Agents buffer locally and fail over to a paired ingest region. The batch ID makes replay safe; cross-region replicated log/object chunks set the RPO.”
 
-Treat blob upload and metadata commit as a small saga. The upload session names an expected checksum and object key; completion verifies object existence, size, and checksum, then transactionally inserts `FileVersion` and advances `FileNode.version`. A unique `(parent_id, normalized_name)` constraint protects the namespace. Completion is idempotent, abandoned multipart uploads expire, and orphan objects are swept after a safety window.
+**Interviewer:** Active-active queries?
 
-### 8.E Common mistakes that fail the round
+**You:** “Yes for replicated data, with freshness markers when one region lags.”
 
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
+**Board now:**
+- Agent buffering and regional failover
+- Explicit freshness/RPO
 
-### 8.F Follow-up Q&A
+### Beat 20 — Close
 
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Postgres metadata and immutable object versions owns the decision; cache state is derived and repairable.
+**You:** “The critical promise is no loss after durable acknowledgment, not exactly-once transport. Series-keyed partitions preserve useful order; watermark corrections handle lateness; cardinality and query budgets protect the platform.”
 
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
+**[Interviewer tip]** They are testing whether capacity, semantics, and backpressure change your architecture.
 
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a committed file version points to a durable verified blob and sibling names obey the chosen uniqueness policy. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for file metadata version. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 8.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps Postgres metadata and immutable object versions authoritative for file metadata version. The hard guarantee is that a committed file version points to a durable verified blob and sibling names obey the chosen uniqueness policy, enforced atomically rather than inferred from cache. The main path meets metadata reads are low latency; large bytes bypass application servers, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
+**Board now:**
+- ACK invariant
+- Cardinality and lag as operational risks
 
 ---
 
-## 9. URL Shortener
+## 4. Pastebin / Viral Text — full progressive interview
 
-### 9.1 Architecture
+### Beat 1 — Clarify the object
+
+**Interviewer:** Design Pastebin.
+
+**You (ask / say / draw):** “Is v1 create-and-read immutable text, or do users edit documents?”
+
+**Interviewer:** Immutable pastes, optional expiry.
+
+**You:** “That simplifies consistency: one write, many reads.”
+
+**Board now:**
+- Immutable text
+- Optional expiry
+
+### Beat 2 — Clarify access
+
+**You (ask / say / draw):** “Public, unlisted, and private?”
+
+**Interviewer:** All three.
+
+**You:** “Unlisted means possession of an ID, not strong secrecy; private requires authorization.”
+
+**Board now:**
+- Visibility modes
+- Auth required for private
+
+### Beat 3 — Clarify size
+
+**You (ask / say / draw):** “Maximum body size and retention?”
+
+**Interviewer:** One megabyte; default one year.
+
+**You:** “Bodies fit object storage well; metadata remains small.”
+
+**Board now:**
+- Body ≤1 MB
+- Default retention: one year
+
+### Beat 4 — Clarify virality
+
+**You (ask / say / draw):** “Should one paste suddenly receive millions of reads?”
+
+**Interviewer:** Yes; that is the main challenge.
+
+**You:** “Then edge caching and origin protection matter more than write throughput.”
+
+**Board now:**
+- Viral read spikes
+- Protect origin
+
+### Beat 5 — NFRs
+
+**You (ask / say / draw):** “Create p95 under 500 ms, cached reads under 100 ms, 99.99% read availability, durable acknowledged writes, and deletion propagation under one minute.”
+
+**Interviewer:** Why one minute for deletion?
+
+**You:** “It is a policy target balancing CDN invalidation; legal deletion may require stricter purge workflows.”
+
+**Board now:**
+- Read-heavy SLOs
+- Bounded delete propagation
+
+### Beat 6 — Capacity
+
+**You (ask / say / draw):** “Assume 10 million creates/day at 10 KB average: about 100 GB/day, while reads are 100:1 and bursty.”
+
+**Interviewer:** Fine.
+
+**You:** “IDs and metadata are easy; bandwidth and cache hit rate dominate.”
+
+**Board now:**
+- ~100 GB/day bodies
+- Read:write ≈100:1
+
+### Beat 7 — Begin model
+
+**Interviewer:** What entities?
+
+**You (ask / say / draw):** “Start with `Paste(id, owner_id?, object_key, visibility, created_at, expires_at, status, content_hash)`.”
+
+**Interviewer:** Body inline?
+
+**You:** “Not at this scale; object storage holds bodies and metadata DB holds lifecycle.”
+
+**Board now:**
+- Paste metadata
+- Body object separated
+
+### Beat 8 — ID generation
+
+**Interviewer:** Generate short IDs.
+
+**You (ask / say / draw):** “Random 96-bit IDs encoded base62 avoid a central counter and resist enumeration.”
+
+**Interviewer:** They are longer than six characters.
+
+**You:** “Correct; six characters is too collision-prone and enumerable at this scale. We can display a shorter custom alias separately.”
+
+**Board now:**
+- Random nonsequential IDs
+- Optional unique alias
+
+### Beat 9 — Create API
+
+**You (ask / say / draw):** “`POST /pastes` accepts text, visibility, expiry, and Idempotency-Key; returns `201 {id,url,expiresAt}`.”
+
+**Interviewer:** When is it visible?
+
+**You:** “Only after body upload and metadata commit; partial uploads are garbage-collected.”
+
+**Board now:**
+- Create endpoint
+- Publish after durable body
+
+### Beat 10 — Wrong ordering and correction
+
+**You (ask / say / draw):** “I could insert metadata first, then upload the object.”
+
+**Interviewer:** A reader can find missing content.
+
+**You:** “Right. Upload to a temporary key, verify hash, then commit LIVE metadata pointing to the final object or atomically promote.”
+
+**Board now:**
+- Corrected publish protocol
+- No LIVE pointer to missing body
+
+### Beat 11 — Draw the write path
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant P as Paste Service
+  participant O as Object Store
+  participant D as Metadata DB
+  C->>P: POST paste + key
+  P->>O: write temporary object
+  O-->>P: checksum + version
+  P->>D: insert LIVE metadata + dedupe
+  D-->>P: commit
+  P-->>C: 201 URL
+```
+
+While drawing say: “A sweeper removes temporary objects that never gained committed metadata.”
+
+**Board now:**
+- Durable write sequence
+- Orphan cleanup
+
+### Beat 12 — Read API
+
+**Interviewer:** Read it.
+
+**You (ask / say / draw):** “`GET /p/{id}` checks visibility and expiry, then returns the body with ETag and immutable cache headers where safe.”
+
+**Interviewer:** Public and private same cache?
+
+**You:** “No. Public may be CDN-cached; private responses are authorization-bound and generally not shared.”
+
+**Board now:**
+- GET semantics
+- Visibility-aware caching
+
+### Beat 13 — Earn read architecture
 
 ```mermaid
 flowchart LR
-  User --> LB --> App
-  App --> Redis[(code→url)]
-  App --> PG[(urls)]
-  App --> ID[Snowflake / Redis INCR → base62]
-  App --> K[Kafka clicks]
-  K --> Analytics
+  Reader[Reader] --> CDN[CDN]
+  CDN --> Edge[Read Edge]
+  Edge --> Meta[(Metadata Cache/DB)]
+  Edge --> Obj[(Object Store)]
+  Creator[Creator] --> Write[Paste Service]
+  Write --> Obj
+  Write --> DB[(Metadata DB)]
+  DB --> Events[Outbox Events]
+  Events --> CDN
 ```
 
-**Architecture narration — say this while pointing:**
+While drawing say: “Metadata decides authorization and liveness; the CDN serves only eligible immutable bodies.”
 
-- Redirect enters through load balancing and checks Redis first.
-- The application falls back to the durable mapping store and fills cache.
-- ID generation reserves collision-free codes; analytics events are asynchronous.
-- No analytics dependency is allowed on the redirect response path.
+**Board now:**
+- Read and write paths
+- Invalidation event path
 
-### 9.2 Design choices table
+### Beat 14 — Viral cache miss
 
-| Decision | Option A | Option B | Pick when |
-|----------|----------|----------|-----------|
-| ID | Counter base62 | Hash long URL | Counter: predictable size; Hash: dedup |
-| Redirect | 301 | 302 | 302 if counting clicks |
-| Storage | SQL | KV | SQL fine to millions/day with cache |
+**Interviewer:** A celebrity link goes viral before the cache is warm.
 
-### 9.3 Redirect path
+**You (ask / say / draw):** “Use request coalescing per key at the edge, origin shield caching, and stale-if-error.”
 
-Cache-first; on miss load SQL; fill cache; async click event.
+**Interviewer:** What about many regions missing together?
 
+**You:** “A shield tier collapses regional misses into one object-store fetch.”
 
-### 9.A What the interviewer is grading
+**Board now:**
+- Single-flight per key
+- Origin shield
 
-- Frame URL Shortener around the user journey and explicitly name the authoritative state.
-- Model the core resource—short-code namespace—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: each active short code maps to exactly one destination and redirect never waits for analytics.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: redirect p95 under 50 ms with read-heavy viral traffic.
-- Explain the trade-off: cache mappings aggressively and process clicks asynchronously.
-- Walk through failure recovery for ID collision, hot-key cache miss, malicious destination, or expired mapping in cache.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
+### Beat 15 — Draw stampede control
 
-### 9.B How to open (60 seconds)
+```mermaid
+sequenceDiagram
+  participant R as Many Readers
+  participant E as CDN Edge
+  participant S as Origin Shield
+  participant O as Object Store
+  R->>E: GET same ID
+  E->>S: one coalesced miss
+  S->>O: one body fetch
+  O-->>S: immutable body
+  S-->>E: cached response
+  E-->>R: fan-out
+```
 
-**Say this:**
+While drawing say: “The lock is short and local to a cache miss; it never becomes content truth.”
 
-> “I’ll design URL Shortener by first fixing the v1 journey, scale, and consistency boundary. The critical resource is short-code namespace, and my non-negotiable invariant is that each active short code maps to exactly one destination and redirect never waits for analytics. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume redirect p95 under 50 ms with read-heavy viral traffic. The key trade-off is to cache mappings aggressively and process clicks asynchronously. After the happy path I’ll test retries, concurrency, and ID collision, hot-key cache miss, malicious destination, or expired mapping in cache. If you prefer, I can go deeper on schema and races or on distributed scaling.”
+**Board now:**
+- Collapsed forwarding
+- Stale-if-error policy
 
-### 9.C Clarifying questions, APIs, and schema
+### Beat 16 — Expiry
 
-**Ask before drawing:**
+**Interviewer:** How does expiry work?
 
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
+**You (ask / say / draw):** “Reads enforce `expires_at` immediately from metadata. A delayed queue or bucketed sweeper deletes bodies later.”
 
-**API surface to put on the board:**
+**Interviewer:** Why both?
 
-- create short URL, redirect, delete/disable, and retrieve analytics.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
+**You:** “Correctness does not depend on timely cleanup; cleanup controls cost.”
 
-**Schema spine:**
+**Board now:**
+- Logical expiry on read
+- Async physical deletion
 
-- Url(code UNIQUE, long_url, owner_id, created_at, expires_at, status), ClickEvent(code, ts, referrer).
-- Put tenant/owner scope into every primary lookup involving short-code namespace.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
+### Beat 17 — Abuse
 
-### 9.D Deep explanation of the hard invariant
+**Interviewer:** What about malware or secrets?
 
-**Invariant:** Each active short code maps to exactly one destination and redirect never waits for analytics.
+**You (ask / say / draw):** “Rate limits, content-size checks, async scanning, report workflows, and quarantine. Private content scanning follows policy and legal constraints.”
 
-The namespace invariant exists because generators run concurrently across many hosts. A check-then-insert allocator can issue the same code twice, and overwriting a mapping sends existing links to unrelated content. Redirect correctness also requires status and expiry to survive stale caches.
+**Interviewer:** Serve before scan?
 
-Use a globally unique numeric allocator encoded in Base62, or generate random codes and rely on `UNIQUE(code)` with retry. Inserts are immutable for normal links; custom aliases use the same constraint. Cache entries include destination, status, and expiry, and deletion writes a tombstone or purges the key. Click analytics is never in the correctness transaction.
+**You:** “For public content, perhaps `PENDING_SCAN` until fast checks pass.”
 
-### 9.E Common mistakes that fail the round
+**Board now:**
+- Moderation lifecycle
+- Quarantine/takedown
 
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
+### Beat 18 — Multi-region
 
-### 9.F Follow-up Q&A
+**Interviewer:** Ten-times global traffic.
 
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Durable url mapping store owns the decision; cache state is derived and repairable.
+**You (ask / say / draw):** “Create in a home region selected by ID; asynchronously replicate immutable bodies and metadata. Reads route to nearest available copy.”
 
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
+**Interviewer:** Immediate read after write abroad?
 
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve each active short code maps to exactly one destination and redirect never waits for analytics. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
+**You:** “The create response can pin to home origin until replication, or the reader falls back there.”
 
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for short-code namespace. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
+**Board now:**
+- Home-region writes
+- Global replicated reads
 
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
+### Beat 19 — Deletion race
 
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
+**Interviewer:** A delete races with a cached read.
 
-### 9.G Close script (30–45 seconds)
+**You (ask / say / draw):** “Metadata status becomes DELETED first, then purge events invalidate CDN keys. Short metadata TTL and signed cache tags bound stale exposure.”
 
-**Say this:**
+**Interviewer:** Can you promise instant purge?
 
-> “The design keeps durable URL mapping store authoritative for short-code namespace. The hard guarantee is that each active short code maps to exactly one destination and redirect never waits for analytics, enforced atomically rather than inferred from cache. The main path meets redirect p95 under 50 ms with read-heavy viral traffic, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
+**You:** “Not honestly across all caches; I state and monitor the propagation SLO.”
 
+**Board now:**
+- Tombstone first
+- Measured purge propagation
+
+### Beat 20 — Close
+
+**You:** “Immutable bodies make aggressive caching safe. Metadata is authoritative for visibility and lifecycle; publish ordering avoids broken reads; coalescing and shields absorb virality; deletion uses tombstones plus bounded invalidation.”
+
+**[If you blank]** Ask: “What happens if this one key becomes a million times hotter?”
+
+**Board now:**
+- Authority: metadata
+- Dominant risk: hot-key bandwidth
 
 ---
 
-## 10. Rate Limiter / Hit Counter
+## 5. Elevator OOD — full progressive interview
 
-### 10.1 Placement
+### Beat 1 — Clarify the boundary
+
+**Interviewer:** Design an elevator system.
+
+**You (ask / say / draw):** “Should I model dispatch software and car state, while treating motor and safety PLCs as hardware interfaces?”
+
+**Interviewer:** Yes. Do not design braking electronics.
+
+**You:** “I’ll make safety interlocks external hard constraints.”
+
+**Board now:**
+- Scope: dispatch + car controller
+- Out: physical safety implementation
+
+### Beat 2 — Clarify topology
+
+**You (ask / say / draw):** “One building with multiple cars and floor call buttons?”
+
+**Interviewer:** Twenty floors, four cars.
+
+**You:** “We need hall-call assignment and per-car stop scheduling.”
+
+**Board now:**
+- 20 floors, 4 cars
+- Hall calls and car requests
+
+### Beat 3 — Clarify request semantics
+
+**You (ask / say / draw):** “Hall calls specify direction, while inside requests specify destination?”
+
+**Interviewer:** Correct.
+
+**You:** “Those are distinct request types with different completion conditions.”
+
+**Board now:**
+- HallCall(floor, direction)
+- CarRequest(car, destination)
+
+### Beat 4 — Clarify operational modes
+
+**You (ask / say / draw):** “Should v1 include maintenance, fire service, and overload?”
+
+**Interviewer:** Include their effect, not every regulatory detail.
+
+**You:** “They become modes that override normal dispatch.”
+
+**Board now:**
+- NORMAL, MAINTENANCE, FIRE, OUT_OF_SERVICE
+- Overload blocks movement
+
+### Beat 5 — NFRs
+
+**You (ask / say / draw):** “Safety state must never be bypassed; commands should react under 100 ms; dispatch aims to minimize wait and avoid starvation.”
+
+**Interviewer:** Is average wait enough?
+
+**You:** “No. I’ll monitor p95 wait and cap starvation even if average increases slightly.”
+
+**Board now:**
+- Command reaction <100 ms
+- p95 wait + starvation bound
+
+### Beat 6 — Begin classes
+
+**Interviewer:** Model it.
+
+**You (ask / say / draw):** “Start with `ElevatorSystem`, `ElevatorCar`, and `Dispatcher`. System owns cars; dispatcher assigns hall calls.”
+
+**Interviewer:** Does Dispatcher move cars?
+
+**You:** “No. It chooses assignments; each CarController owns movement state.”
+
+**Board now:**
+- Dispatcher: assignment
+- CarController: execution
+
+### Beat 7 — Add requests
+
+**You (ask / say / draw):** “Add immutable `HallCall` and `CarRequest`, each with ID, timestamp, status, and requested floor/direction.”
+
+**Interviewer:** Why IDs?
+
+**You:** “Button retries and sensor duplicates should not create duplicate work.”
+
+**Board now:**
+- Identified request commands
+- PENDING, ASSIGNED, SERVED, CANCELLED
+
+### Beat 8 — Add hardware ports
+
+**Interviewer:** How does code touch hardware?
+
+**You (ask / say / draw):** “Through interfaces: `MotorPort`, `DoorPort`, `FloorSensor`, `LoadSensor`, and `SafetyInterlock`.”
+
+**Interviewer:** Why interfaces?
+
+**You:** “Deterministic simulation and testing, plus strict separation from vendor drivers.”
+
+**Board now:**
+- Hardware adapter interfaces
+- Simulation-friendly core
+
+### Beat 9 — Draw the class model
+
+```mermaid
+classDiagram
+  class ElevatorSystem
+  class Dispatcher {
+    +assign(HallCall)
+    +reassign(callId)
+  }
+  class ElevatorCar {
+    +id
+    +currentFloor
+    +direction
+    +mode
+  }
+  class CarController {
+    +acceptStop(floor)
+    +tick(snapshot)
+  }
+  class StopPlan {
+    +upStops
+    +downStops
+  }
+  class HardwarePort
+  ElevatorSystem *-- Dispatcher
+  ElevatorSystem *-- ElevatorCar
+  ElevatorCar *-- CarController
+  CarController *-- StopPlan
+  CarController --> HardwarePort
+```
+
+While drawing say: “Assignment and execution are separate ownership boundaries.”
+
+**Board now:**
+- Core classes
+- Dependency direction toward hardware ports
+
+### Beat 10 — Scheduling choice
+
+**Interviewer:** How does one car order stops?
+
+**You (ask / say / draw):** “Use LOOK: while moving up, serve ascending compatible stops, then reverse when none remain.”
+
+**Interviewer:** Why not nearest floor every time?
+
+**You:** “Nearest can oscillate and starve directional riders; LOOK gives stable progress.”
+
+**Board now:**
+- Two ordered stop sets
+- Directional sweep
+
+### Beat 11 — Wrong turn
+
+**You (ask / say / draw):** “Dispatcher can mutate every car’s stop list directly.”
+
+**Interviewer:** Then who owns synchronization?
+
+**You:** “That is weak. Dispatcher sends `AssignStop` commands; each CarController serializes its own state.”
+
+**Board now:**
+- Corrected single-writer per car
+- Commands, not shared mutation
+
+### Beat 12 — Dispatch score
+
+**Interviewer:** Pick a car for a hall call.
+
+**You (ask / say / draw):** “Filter cars by mode and capacity, then score direction compatibility, estimated travel time, current load, and starvation age.”
+
+**Interviewer:** Is the score perfect?
+
+**You:** “No; it is replaceable policy behind `DispatchStrategy` and measured in simulation.”
+
+**Board now:**
+- Eligible filter
+- Pluggable score policy
+
+### Beat 13 — Method API
+
+**Interviewer:** Show methods.
+
+**You (ask / say / draw):** “`requestHall(floor, direction, requestId)` and `requestCar(carId, floor, requestId)` return accepted assignment/state.”
+
+**Interviewer:** What if the same button repeats?
+
+**You:** “Deduplicate by request ID or active `(floor,direction)` hall call.”
+
+**Board now:**
+- Public command methods
+- Idempotent button events
+
+### Beat 14 — State machine
+
+```mermaid
+stateDiagram-v2
+  [*] --> IDLE
+  IDLE --> MOVING: safe and stop assigned
+  MOVING --> LEVELING: target sensor reached
+  LEVELING --> DOOR_OPEN: aligned and stopped
+  DOOR_OPEN --> DOOR_CLOSING: dwell elapsed
+  DOOR_CLOSING --> DOOR_OPEN: obstruction
+  DOOR_CLOSING --> IDLE: closed, no stops
+  DOOR_CLOSING --> MOVING: closed, more stops
+  IDLE --> OUT_OF_SERVICE: fault
+  MOVING --> EMERGENCY_STOP: safety trip
+```
+
+While drawing say: “Movement requires closed doors and a positive safety interlock.”
+
+**Interviewer:** Can software command around a failed interlock?
+
+**You:** “Never.”
+
+**Board now:**
+- Legal car states
+- Non-bypassable guard
+
+### Beat 15 — Tick behavior
+
+**Interviewer:** What happens each tick?
+
+**You (ask / say / draw):** “Read one immutable sensor snapshot, validate invariants, choose one transition, emit hardware commands, and append an event.”
+
+**Interviewer:** Multiple sensor events arrive together.
+
+**You:** “The car actor mailbox serializes them; snapshot sequence numbers reject stale inputs.”
+
+**Board now:**
+- Deterministic transition loop
+- Sequence-numbered snapshots
+
+### Beat 16 — Draw runtime interaction
+
+```mermaid
+sequenceDiagram
+  participant B as Hall Button
+  participant D as Dispatcher
+  participant C as Car Actor
+  participant H as Hardware Adapter
+  B->>D: hall call + requestId
+  D->>C: AssignStop
+  C-->>D: accepted
+  H->>C: sensor snapshot
+  C->>H: move/door command
+  H->>C: command result
+  C->>D: served event
+```
+
+While drawing say: “Each car processes commands sequentially; hardware reports facts, not business decisions.”
+
+**Board now:**
+- Actor interaction
+- Acknowledged assignment
+
+### Beat 17 — Failure recovery
+
+**Interviewer:** Car 2 stops reporting.
+
+**You (ask / say / draw):** “After a heartbeat threshold, mark it OUT_OF_SERVICE, requeue unserved hall calls, and alert operators. Inside-car requests require human safety procedures.”
+
+**Interviewer:** Reassign immediately?
+
+**You:** “Only hall calls; never pretend trapped passengers were served.”
+
+**Board now:**
+- Heartbeat fault handling
+- Safe request reassignment
+
+### Beat 18 — Fairness
+
+**Interviewer:** The top floor keeps waiting.
+
+**You (ask / say / draw):** “Increase age weight and enforce a maximum wait override that assigns the best eligible car.”
+
+**Interviewer:** Trade-off?
+
+**You:** “Slightly worse average efficiency for bounded tail latency.”
+
+**Board now:**
+- Aging priority
+- Tail versus average trade-off
+
+### Beat 19 — Testing
+
+**Interviewer:** How do you test it?
+
+**You (ask / say / draw):** “A virtual clock and fake hardware run deterministic scenarios: obstruction, overload, simultaneous calls, failed sensor, fire mode, and starvation.”
+
+**Interviewer:** Property tests?
+
+**You:** “Doors closed before movement, floor bounds, no skipped safety state, and every accepted request eventually served or faulted.”
+
+**Board now:**
+- Deterministic simulator
+- Safety/liveness properties
+
+### Beat 20 — Close
+
+**You:** “Dispatcher owns hall-call assignment; each car actor owns its state and stop plan. LOOK provides stable movement, modes override normal policy, and hardware interlocks remain authoritative for safety.”
+
+**[Interviewer tip]** OOD depth is ownership, state transitions, interfaces, and testability—not merely naming classes.
+
+**Board now:**
+- Ownership summary
+- Safety and scheduling trade-off
+
+---
+
+## 6. Ticket / Event Booking — condensed progressive interview
+
+### Beat 1 — Clarify inventory
+
+**Interviewer:** Design ticket booking.
+
+**You (ask / say / draw):** “Are seats assigned, general admission, or both?”
+
+**Interviewer:** Assigned seats first.
+
+**You:** “Then each seat-event pair is scarce inventory.”
+
+**Board now:**
+- Assigned seating
+- One owner per event seat
+
+### Beat 2 — Clarify holds
+
+**You (ask / say / draw):** “Should checkout hold seats temporarily?”
+
+**Interviewer:** Yes, for five minutes.
+
+**You:** “We need expiring holds before purchase.”
+
+**Board now:**
+- Five-minute hold
+- Expiry lifecycle
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “Browse p95 250 ms; hold p95 500 ms; no double sale; event launches may spike to 100k requests/s.”
+
+**Interviewer:** Correct.
+
+**You:** “Discovery can be stale; hold creation cannot.”
+
+**Board now:**
+- Viral launch traffic
+- Strong hold path
+
+### Beat 4 — Model gradually
+
+**You (ask / say / draw):** “Start Event and Seat, then `EventSeat(event_id, seat_id, status, hold_id, hold_expires, version)`.”
+
+**Interviewer:** Why EventSeat?
+
+**You:** “Price and availability vary by event even in one venue.”
+
+**Board now:**
+- Event, Seat, EventSeat
+- Event-scoped state
+
+### Beat 5 — Hold API
+
+**Interviewer:** Give one endpoint.
+
+**You (ask / say / draw):** “`POST /events/{id}/holds` with seat IDs and Idempotency-Key returns hold ID and expiry.”
+
+**Interviewer:** Retry?
+
+**You:** “Unique key returns the same hold; conflicting seats return 409.”
+
+**Board now:**
+- Create hold
+- Replay-safe response
+
+### Beat 6 — Last-seat race
+
+**Interviewer:** Two users hold the last seat.
+
+**You (ask / say / draw):** “Conditional update AVAILABLE→HELD with version, all requested seats in one transaction.”
+
+**Interviewer:** One of ten seats fails?
+
+**You:** “Rollback the set, unless product explicitly supports partial holds.”
+
+**Board now:**
+- Atomic seat-set hold
+- CAS/locked rows
+
+### Beat 7 — Draw lifecycle
+
+```mermaid
+stateDiagram-v2
+  [*] --> AVAILABLE
+  AVAILABLE --> HELD: atomic hold
+  HELD --> AVAILABLE: expiry
+  HELD --> SOLD: payment confirmed
+  SOLD --> REFUNDED: policy allows
+```
+
+While drawing say: “Expiry is a legal transition guarded by hold ID and version.”
+
+**Board now:**
+- Seat state machine
+- Conditional transitions
+
+### Beat 8 — Payment failure
+
+**Interviewer:** Charge succeeds, confirmation crashes.
+
+**You (ask / say / draw):** “Use provider idempotency, webhook reconciliation, and a durable purchase attempt.”
+
+**Interviewer:** Hold expires during payment?
+
+**You:** “Transition HELD→PAYMENT_PENDING before charging, with a bounded grace period.”
+
+**Board now:**
+- Payment-pending state
+- Reconciled settlement
+
+### Beat 9 — Hot event
+
+**Interviewer:** Ten times launch traffic.
+
+**You (ask / say / draw):** “Virtual waiting room, per-event admission tokens, cached seat maps, and partition writes by event.”
+
+**Interviewer:** Redis as truth?
+
+**You:** “No; it meters admission. EventSeat remains authoritative.”
+
+**Board now:**
+- Waiting room
+- Per-event write ownership
+
+### Beat 10 — Draw earned architecture
 
 ```mermaid
 flowchart LR
-  Client --> Edge[CDN/WAF]
-  Edge --> GW[API Gateway]
-  GW --> RL{Redis rate limit}
-  RL -->|allow| Svc
-  RL -->|deny 429| Client
+  Fan[Fans] --> Wait[Waiting Room]
+  Wait --> API[Booking API]
+  API --> Cache[(Seat Map Cache)]
+  API --> DB[(Event-partitioned DB)]
+  API --> Pay[Payment]
+  DB --> O[Outbox]
+  O --> Cache
 ```
 
-**Placement-diagram narration — say this while pointing:**
+While drawing say: “The waiting room shapes load; it does not allocate seats.”
 
-- Coarse abuse protection starts at CDN/WAF; product-aware quotas run at the gateway.
-- Gateway derives the policy key such as tenant, user, token, or IP.
-- Redis executes refill and consume atomically and returns allow plus remaining quota.
-- Denied requests stop before service work and include 429 and Retry-After.
+**Board now:**
+- Admission versus allocation
+- Projection invalidation
 
-### 10.2 Algorithms (detail)
+### Beat 11 — Wrong turn
 
-**Token bucket**
-* Capacity `C`, refill `r` tokens/sec  
-* Atomic Redis Lua: refill based on clock, then take 1  
+**You (ask / say / draw):** “A distributed lock per seat could solve it.”
 
-**Sliding window counter**
-* Current minute + previous minute weighted by overlap  
+**Interviewer:** What if the lock service and DB disagree?
 
-**Hit counter (coding → design)**
-* Single node: arrays size 300  
-* Multi node: Kafka → aggregator OR Redis INCR with TTL buckets  
+**You:** “Better: make the database state transition atomic; external locks add another failure boundary.”
 
-### 10.3 Redis Lua sketch (say verbally)
+**Board now:**
+- Corrected DB-native claim
+- Fewer split-brain states
 
-```text
-tokens = min(C, tokens + (now-last)*r)
-if tokens < 1: deny else tokens--, allow
-```
+### Beat 12 — Close
 
+**You:** “The invariant is one terminal sale per EventSeat. Holds are short, idempotent claims; payment ambiguity is reconciled; a waiting room protects hot events without becoming inventory truth.”
 
-### 10.A What the interviewer is grading
-
-- Frame Rate Limiter / Hit Counter around the user journey and explicitly name the authoritative state.
-- Model the core resource—quota bucket—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: one atomic decision both observes and consumes quota for the correct policy scope.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: single-digit-millisecond overhead and fail behavior chosen per endpoint.
-- Explain the trade-off: central accuracy versus local availability and lower latency.
-- Walk through failure recovery for concurrent requests, clock skew, Redis loss, or a single tenant hot key.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 10.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Rate Limiter / Hit Counter by first fixing the v1 journey, scale, and consistency boundary. The critical resource is quota bucket, and my non-negotiable invariant is that one atomic decision both observes and consumes quota for the correct policy scope. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume single-digit-millisecond overhead and fail behavior chosen per endpoint. The key trade-off is to central accuracy versus local availability and lower latency. After the happy path I’ll test retries, concurrency, and concurrent requests, clock skew, Redis loss, or a single tenant hot key. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 10.C Clarifying questions, APIs, and schema
-
-**Ask before drawing:**
-
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
-
-**API surface to put on the board:**
-
-- check-and-consume, inspect policy, update policy, and query usage.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
-
-**Schema spine:**
-
-- Policy(scope, capacity, refill_rate, version), Bucket(key, tokens, last_refill), DecisionLog(sampled).
-- Put tenant/owner scope into every primary lookup involving quota bucket.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
-
-### 10.D Deep explanation of the hard invariant
-
-**Invariant:** One atomic decision both observes and consumes quota for the correct policy scope.
-
-A rate limit is a concurrency decision, not a periodic counter report. If two gateways read the same token count and decrement separately, both can admit the final token and overload the protected service. Applying different policy versions across nodes also makes customer-visible quotas inconsistent.
-
-A Redis Lua script reads elapsed time, refills, decides, decrements, and returns remaining quota atomically against Redis server time. Keys include policy scope and version; policy rollout has an explicit cutover. For extreme scale, gateways lease small token batches locally, accepting bounded overshoot. State whether dependency failure is fail-open for low-risk reads or fail-closed for costly/security-sensitive operations.
-
-### 10.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 10.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Atomic redis state or a local leased quota owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve one atomic decision both observes and consumes quota for the correct policy scope. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for quota bucket. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 10.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps atomic Redis state or a local leased quota authoritative for quota bucket. The hard guarantee is that one atomic decision both observes and consumes quota for the correct policy scope, enforced atomically rather than inferred from cache. The main path meets single-digit-millisecond overhead and fail behavior chosen per endpoint, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
+**Board now:**
+- Invariant
+- Spike-control trade-off
 
 ---
 
-## 11. Enterprise RAG / Agent Platform
+## 7. Ride-Sharing — condensed progressive interview
 
-### 11.1 Architecture (detailed)
+### Beat 1 — Scope
+
+**Interviewer:** Design ride-sharing.
+
+**You (ask / say / draw):** “Should v1 cover request, match, trip, and payment in one city?”
+
+**Interviewer:** Yes.
+
+**You:** “I’ll defer pooling and scheduled rides.”
+
+**Board now:**
+- One-city on-demand rides
+- No pooling
+
+### Beat 2 — Location freshness
+
+**You (ask / say / draw):** “How often do drivers publish location?”
+
+**Interviewer:** Every three seconds.
+
+**You:** “Location is high-volume ephemeral state; trip state is durable.”
+
+**Board now:**
+- 3 s driver updates
+- Separate ephemeral and durable data
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “Match p95 under five seconds, location freshness under ten seconds, no driver assigned to two active trips.”
+
+**Interviewer:** Good.
+
+**You:** “The driver claim is the hard invariant.”
+
+**Board now:**
+- Match SLO
+- Exclusive active driver
+
+### Beat 4 — Entities
+
+**You (ask / say / draw):** “Start Rider, Driver, Vehicle, and Trip with REQUESTED, MATCHING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED.”
+
+**Interviewer:** Location table?
+
+**You:** “Latest location in geo index; durable samples stream to analytics separately.”
+
+**Board now:**
+- Core durable entities
+- Geo projection
+
+### Beat 5 — Request API
+
+**You (ask / say / draw):** “`POST /rides` with pickup, destination, product, and Idempotency-Key returns trip ID in MATCHING.”
+
+**Interviewer:** Synchronous match?
+
+**You:** “Asynchronous; client subscribes or polls.”
+
+**Board now:**
+- Async ride command
+- Status channel
+
+### Beat 6 — Candidate matching
+
+**Interviewer:** Find drivers.
+
+**You (ask / say / draw):** “Query nearby available drivers by geohash rings, rank ETA and acceptance history, then offer to a small batch.”
+
+**Interviewer:** Closest location may be stale.
+
+**You:** “Filter by last-update time and expand radius.”
+
+**Board now:**
+- Geo candidate search
+- Freshness filter
+
+### Beat 7 — Two trips claim one driver
+
+**Interviewer:** Race?
+
+**You (ask / say / draw):** “Conditional transition Driver AVAILABLE→OFFERED/ASSIGNED with trip ID and version.”
+
+**Interviewer:** Driver declines?
+
+**You:** “Expire offer and conditionally release only if it still belongs to that trip.”
+
+**Board now:**
+- Versioned driver claim
+- Ownership-safe release
+
+### Beat 8 — Draw match sequence
 
 ```mermaid
-flowchart TB
-  subgraph Ingest
-    Src[SharePoint/S3/Confluence] --> Conn[Connectors]
-    Conn --> Parse[Parse/OCR/PII redact]
-    Parse --> Chunk[Chunker]
-    Chunk --> Emb[Embed workers]
-    Emb --> VDB[(Vector DB collections per tenant)]
-    Chunk --> Meta[(Postgres docs/chunks/ACL)]
-  end
-
-  subgraph Serving
-    U[User] --> API[Answer / Agent API]
-    API --> Auth[AuthN/Z tenant + ACL]
-    Auth --> Ret[Hybrid retrieve: BM25 + ANN]
-    Ret --> Meta
-    Ret --> VDB
-    Ret --> Rerank[Cross-encoder rerank]
-    Rerank --> LLM[LLM gateway]
-    LLM --> Guard[Citation check + schema validate]
-    Guard --> Audit[(Audit + traces)]
-  end
-
-  subgraph Agent
-    API --> Graph[Orchestrator]
-    Graph --> Tools[Allowlisted tools]
-    Tools --> HITL[Human approval]
-  end
+sequenceDiagram
+  participant R as Rider
+  participant M as Matcher
+  participant G as Geo Index
+  participant D as Driver State DB
+  R->>M: ride requested
+  M->>G: nearby fresh drivers
+  G-->>M: ranked candidates
+  M->>D: conditional claim driver
+  D-->>M: claimed or conflict
+  M-->>R: assignment event
 ```
 
-**Architecture narration — say this while pointing:**
+While drawing say: “Geo search proposes; durable driver state disposes.”
 
-- Ingestion connectors parse, redact, chunk, embed, and write both vectors and ACL metadata.
-- Serving authenticates before retrieval, combines lexical and vector candidates, reranks, and calls the model.
-- Guarding verifies structured output and citations; audit captures prompt, versions, sources, latency, and cost.
-- Agent orchestration may call only typed allowlisted tools, with human approval for risky writes.
+**Board now:**
+- Advisory candidate index
+- Authoritative claim
 
-### 11.2 Grounded answer sequence
+### Beat 9 — Architecture
+
+```mermaid
+flowchart LR
+  Apps[Rider / Driver Apps] --> GW[Realtime Gateway]
+  GW --> Trip[Trip Service]
+  GW --> Loc[Location Ingest]
+  Loc --> Geo[(Geo Index)]
+  Trip --> DB[(Trip + Driver State)]
+  Trip --> Match[Matcher]
+  Match --> Geo
+  Match --> DB
+  DB --> Bus[Events]
+  Bus --> GW
+```
+
+While drawing say: “Realtime delivery may retry; trip transitions are idempotent.”
+
+**Board now:**
+- Realtime and durable paths
+- Event-driven updates
+
+### Beat 10 — Failure
+
+**Interviewer:** Driver loses network after accepting.
+
+**You (ask / say / draw):** “Keep assignment during a grace window, show degraded tracking, and recontact. Do not instantly rematch and create two drivers.”
+
+**Interviewer:** After timeout?
+
+**You:** “A conditional reassignment workflow with rider notification.”
+
+**Board now:**
+- Connectivity grace
+- Controlled reassignment
+
+### Beat 11 — Ten-times scale
+
+**Interviewer:** Ten cities, ten times traffic.
+
+**You (ask / say / draw):** “Partition by city and geo cell; one trip’s state has a home region. Autoscale stateless match workers.”
+
+**Interviewer:** Airport hotspot?
+
+**You:** “Split hot cells and use queue-specific matching policy.”
+
+**Board now:**
+- City/region ownership
+- Hot-cell splitting
+
+### Beat 12 — Close
+
+**You:** “Location is a stale candidate projection; Driver and Trip state enforce exclusivity. Matching is asynchronous and retryable, with conditional claims and ownership-safe expiry.”
+
+**Board now:**
+- Driver invariant
+- Freshness trade-off
+
+---
+
+## 8. Dropbox-like File Storage — condensed progressive interview
+
+### Beat 1 — Scope
+
+**Interviewer:** Design Dropbox.
+
+**You (ask / say / draw):** “Files, folders, sync, sharing, and version history for v1?”
+
+**Interviewer:** Yes; no collaborative editing.
+
+**You:** “We synchronize immutable versions, not live document operations.”
+
+**Board now:**
+- Sync + sharing + versions
+- No real-time coediting
+
+### Beat 2 — File size
+
+**You (ask / say / draw):** “Maximum file size and offline behavior?”
+
+**Interviewer:** 100 GB; clients may be offline for days.
+
+**You:** “Chunked resumable upload and conflict versions are required.”
+
+**Board now:**
+- 100 GB files
+- Offline multi-device clients
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “No acknowledged version loss, metadata p95 300 ms, resumable upload, and sync notification within five seconds.”
+
+**Interviewer:** Fine.
+
+**You:** “Content durability and metadata consistency are separate.”
+
+**Board now:**
+- Durable chunks
+- Strong namespace mutation
+
+### Beat 4 — Entities
+
+**You (ask / say / draw):** “Start User, NamespaceEntry, FileVersion, and Chunk; an entry points to current version.”
+
+**Interviewer:** Folder rename?
+
+**You:** “Mutate namespace metadata, not file bytes.”
+
+**Board now:**
+- Namespace versus content
+- Immutable FileVersion
+
+### Beat 5 — Upload API
+
+**You (ask / say / draw):** “`POST /uploads`, then parallel `PUT /uploads/{id}/chunks/{n}`, then `POST /uploads/{id}/commit` with base version.”
+
+**Interviewer:** Retry?
+
+**You:** “Chunk hash and index make puts idempotent; commit has an idempotency key.”
+
+**Board now:**
+- Three-step resumable upload
+- Hash-verified chunks
+
+### Beat 6 — Conflict
+
+**Interviewer:** Two offline devices edit the same file.
+
+**You (ask / say / draw):** “Commit conditionally on `baseVersionId`. One wins; the loser creates a conflict copy or asks the user to merge.”
+
+**Interviewer:** Last-write-wins?
+
+**You:** “That silently loses work, so not for file content.”
+
+**Board now:**
+- Optimistic base-version check
+- Explicit conflict artifact
+
+### Beat 7 — Draw upload
+
+```mermaid
+sequenceDiagram
+  participant C as Sync Client
+  participant M as Metadata Service
+  participant O as Object Store
+  C->>M: create upload
+  C->>O: put hashed chunks
+  C->>M: commit manifest + baseVersion
+  M->>O: verify chunks
+  M->>M: CAS current version
+  M-->>C: new version or conflict
+```
+
+While drawing say: “Uploaded chunks are not visible until metadata commit.”
+
+**Board now:**
+- Atomic publication
+- Orphan chunk cleanup
+
+### Beat 8 — Dedup privacy
+
+**Interviewer:** Deduplicate chunks globally?
+
+**You (ask / say / draw):** “Tenant-scoped dedupe is safer; global convergent encryption leaks content equality.”
+
+**Interviewer:** Cost trade-off?
+
+**You:** “Accept lower dedupe or use server-side encrypted domains with explicit risk review.”
+
+**Board now:**
+- Tenant dedupe boundary
+- Privacy versus storage cost
+
+### Beat 9 — Architecture
+
+```mermaid
+flowchart LR
+  Client[Sync Client] --> API[Metadata API]
+  Client --> Obj[(Object Storage)]
+  API --> DB[(Namespace + Versions DB)]
+  DB --> Out[Outbox]
+  Out --> Notify[Change Notification]
+  Notify --> Client
+  DB --> GC[Garbage Collector]
+  GC --> Obj
+```
+
+While drawing say: “Object storage owns bytes; metadata owns reachability and visibility.”
+
+**Board now:**
+- Direct data path
+- Metadata change stream
+
+### Beat 10 — Sharing
+
+**Interviewer:** Share a folder.
+
+**You (ask / say / draw):** “Add ACL entries on namespace roots and evaluate inherited access with cached policy versions.”
+
+**Interviewer:** Revocation?
+
+**You:** “Update authoritative ACL, invalidate tokens/caches, and audit access.”
+
+**Board now:**
+- ACL inheritance
+- Revocation propagation
+
+### Beat 11 — Scale
+
+**Interviewer:** Ten-times files.
+
+**You (ask / say / draw):** “Shard metadata by namespace owner, partition object keys by hash, and move large directory listing to paginated indexes.”
+
+**Interviewer:** Shared folder crosses owners?
+
+**You:** “Keep one namespace home shard; sharing changes permissions, not ownership.”
+
+**Board now:**
+- Namespace home shard
+- Hash-distributed chunks
+
+### Beat 12 — Close
+
+**You:** “Immutable chunks and versions make retries and sync tractable. A conditional metadata commit controls visibility, and base-version checks surface conflicts instead of losing work.”
+
+**Board now:**
+- Publication invariant
+- Conflict policy
+
+---
+
+## 9. URL Shortener — condensed progressive interview
+
+### Beat 1 — Requirements
+
+**Interviewer:** Design a URL shortener.
+
+**You (ask / say / draw):** “Do links expire, support custom aliases, and record analytics?”
+
+**Interviewer:** Yes to all.
+
+**You:** “Redirect remains the critical path; analytics can be asynchronous.”
+
+**Board now:**
+- Create, redirect, expiry, aliases
+- Async analytics
+
+### Beat 2 — Abuse and privacy
+
+**You (ask / say / draw):** “Are links public, and should we scan malicious destinations?”
+
+**Interviewer:** Public; block known abuse.
+
+**You:** “Creation includes validation and asynchronous reputation updates.”
+
+**Board now:**
+- Public links
+- Abuse lifecycle
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “Redirect p99 under 100 ms and 99.99% available; creates p95 under 500 ms; analytics may lag one minute.”
+
+**Interviewer:** Reads are 100:1.
+
+**You:** “Edge caching drives the design.”
+
+**Board now:**
+- Read-heavy SLO
+- Analytics eventual
+
+### Beat 4 — Model
+
+**You (ask / say / draw):** “`Link(code, destination, owner, created, expires, status, version)` plus Alias uniqueness.”
+
+**Interviewer:** Separate code and alias?
+
+**You:** “Both resolve through one unique namespace to prevent ambiguity.”
+
+**Board now:**
+- Link metadata
+- Unique code namespace
+
+### Beat 5 — Code generation
+
+**Interviewer:** Generate codes.
+
+**You (ask / say / draw):** “Preallocate random base62 codes or encode sharded IDs with permutation.”
+
+**Interviewer:** Which?
+
+**You:** “Random codes reduce enumeration; collision retry is cheap with a unique index.”
+
+**Board now:**
+- Random base62
+- Unique constraint
+
+### Beat 6 — APIs
+
+**You (ask / say / draw):** “`POST /links` returns code; `GET /{code}` returns 302 or 301 by product policy.”
+
+**Interviewer:** Retry create?
+
+**You:** “Idempotency-Key returns the same code.”
+
+**Board now:**
+- Create and redirect
+- Idempotent create
+
+### Beat 7 — Draw redirect path
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant E as Edge Cache
+  participant R as Redirect Service
+  participant D as Link DB
+  B->>E: GET /abc
+  E->>R: cache miss
+  R->>D: lookup live link
+  D-->>R: destination + policy
+  R-->>E: redirect + TTL
+  E-->>B: 302 Location
+```
+
+While drawing say: “Negative cache entries are short so new aliases become visible.”
+
+**Board now:**
+- Cached redirect
+- Short negative TTL
+
+### Beat 8 — Hot key
+
+**Interviewer:** One code gets a billion clicks.
+
+**You (ask / say / draw):** “CDN serves it; origin shield and request coalescing protect misses. Click events sample or batch asynchronously.”
+
+**Interviewer:** Exact analytics?
+
+**You:** “Billing-grade counts need durable edge logs; dashboards may be approximate.”
+
+**Board now:**
+- Hot-key edge handling
+- Analytics accuracy tiers
+
+### Beat 9 — Architecture
+
+```mermaid
+flowchart LR
+  Browser --> CDN
+  CDN --> Redirect
+  Redirect --> Cache[(Regional Cache)]
+  Cache --> DB[(Link DB)]
+  Redirect --> Events[Click Log]
+  Events --> Analytics
+  Creator --> Create[Create Service]
+  Create --> DB
+```
+
+While drawing say: “Redirect does not wait for analytics.”
+
+**Board now:**
+- Independent analytics
+- Database fallback
+
+### Beat 10 — Deletion
+
+**Interviewer:** Owner disables a viral link.
+
+**You (ask / say / draw):** “Set DISABLED in DB, publish purge by cache tag, and use bounded TTL as fallback.”
+
+**Interviewer:** Instant?
+
+**You:** “Best effort immediately, with a stated purge SLO.”
+
+**Board now:**
+- Tombstone and purge
+- Bounded stale redirect
+
+### Beat 11 — Multi-region
+
+**Interviewer:** Global traffic?
+
+**You (ask / say / draw):** “Replicate small link metadata globally; route creates to a home region; random codes avoid coordination except uniqueness.”
+
+**Interviewer:** Alias collision across regions?
+
+**You:** “Custom aliases use a single namespace owner or consensus-backed reservation.”
+
+**Board now:**
+- Global read replicas
+- Alias ownership
+
+### Beat 12 — Close
+
+**You:** “The redirect path is cache-first and independent of analytics. Link metadata controls liveness, random codes scale creation, and invalidation plus TTL bounds disable latency.”
+
+**Board now:**
+- Read-path summary
+- Consistency boundary
+
+---
+
+## 10. Rate Limiter / Hit Counter — condensed progressive interview
+
+### Beat 1 — Clarify policy
+
+**Interviewer:** Design a rate limiter.
+
+**You (ask / say / draw):** “Are limits per user, API key, IP, tenant, or combinations?”
+
+**Interviewer:** Per tenant and endpoint, with bursts.
+
+**You:** “The key is `(tenant, route, policy_version)`.”
+
+**Board now:**
+- Composite limit key
+- Burst support
+
+### Beat 2 — Placement
+
+**You (ask / say / draw):** “Is enforcement at one gateway fleet or across regions?”
+
+**Interviewer:** Global product, multiple regions.
+
+**You:** “We must choose between strict global limits and low-latency regional budgets.”
+
+**Board now:**
+- Multi-region enforcement
+- Accuracy/latency trade-off
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “Decision p99 under 5 ms, 99.99% available, bounded over-admission, and dynamic policy propagation under 30 seconds.”
+
+**Interviewer:** Fail open or closed?
+
+**You:** “Per policy: security-sensitive routes fail closed; low-risk reads use local emergency budgets.”
+
+**Board now:**
+- 5 ms decision
+- Route-specific failure mode
+
+### Beat 4 — Algorithm
+
+**Interviewer:** Pick an algorithm.
+
+**You (ask / say / draw):** “Token bucket supports a sustained rate plus burst capacity with constant state.”
+
+**Interviewer:** Sliding window?
+
+**You:** “More exact but more storage. Token bucket fits this stated burst policy.”
+
+**Board now:**
+- Token bucket
+- Capacity and refill rate
+
+### Beat 5 — API
+
+**You (ask / say / draw):** “Internal `checkAndConsume(key, cost, now)` returns allowed, remaining, and retry-after.”
+
+**Interviewer:** Retry same business request?
+
+**You:** “Rate limiting counts attempts by policy; business idempotency is separate.”
+
+**Board now:**
+- Atomic consume API
+- Clear semantic boundary
+
+### Beat 6 — Race
+
+**Interviewer:** Many gateway nodes consume one bucket.
+
+**You (ask / say / draw):** “Use one atomic Redis script per key to refill and consume.”
+
+**Interviewer:** Read then write?
+
+**You:** “That races; calculation and mutation must be one server-side operation.”
+
+**Board now:**
+- Atomic bucket mutation
+- Server time or bounded skew
+
+### Beat 7 — Draw local/global path
+
+```mermaid
+flowchart LR
+  Request --> Gateway
+  Gateway --> Local[Local Micro-bucket]
+  Local -->|lease refill| Regional[(Regional Counter Store)]
+  Regional --> Alloc[Global Budget Allocator]
+  Policy[Policy Service] --> Gateway
+  Policy --> Alloc
+```
+
+While drawing say: “Leases bound overshoot while removing a network hop from most requests.”
+
+**Board now:**
+- Hierarchical budgets
+- Policy distribution
+
+### Beat 8 — Wrong turn
+
+**You (ask / say / draw):** “Every request could call one global Redis cluster.”
+
+**Interviewer:** Cross-region latency and outage blast radius?
+
+**You:** “That is weak. Allocate regional quotas and small gateway leases; overshoot is bounded by outstanding leases.”
+
+**Board now:**
+- Corrected decentralized enforcement
+- Explicit overshoot bound
+
+### Beat 9 — Failure
+
+**Interviewer:** Regional counter store fails.
+
+**You (ask / say / draw):** “Gateways spend remaining leases, then follow fail policy. Emit degraded-mode metrics and cap emergency allowance.”
+
+**Interviewer:** Recovery?
+
+**You:** “Discard expired leases and reacquire against a new epoch.”
+
+**Board now:**
+- Degraded operation
+- Epoch-based lease recovery
+
+### Beat 10 — Hit counter
+
+**Interviewer:** Also return analytics counts.
+
+**You (ask / say / draw):** “Do not overload enforcement state. Emit accepted/rejected events to a streaming counter.”
+
+**Interviewer:** Why separate?
+
+**You:** “Analytics can lag and retry; enforcement must be fast and bounded.”
+
+**Board now:**
+- Async hit-count stream
+- Separate correctness needs
+
+### Beat 11 — Scale
+
+**Interviewer:** One tenant is extremely hot.
+
+**You (ask / say / draw):** “Local leases absorb most load; shard refill keys if policy tolerates bounded overshoot, or dedicate a counter partition.”
+
+**Interviewer:** Strict one-per-second endpoint?
+
+**You:** “Route that key to one owner; strictness costs availability.”
+
+**Board now:**
+- Hot-key options
+- Strictness trade-off
+
+### Beat 12 — Close
+
+**You:** “Token buckets model bursts; atomic mutation handles node races; hierarchical leases keep decisions local and quantify over-admission. Failure mode is a product policy, not a hidden default.”
+
+**Board now:**
+- Algorithm and hierarchy
+- Failure contract
+
+---
+
+## 11. Enterprise RAG / Agent Platform — condensed progressive interview
+
+### Beat 1 — Product scope
+
+**Interviewer:** Design enterprise RAG.
+
+**You (ask / say / draw):** “Is v1 question answering over tenant documents with citations, or autonomous tool execution too?”
+
+**Interviewer:** Answers with citations first.
+
+**You:** “I’ll defer side-effecting agents.”
+
+**Board now:**
+- Grounded Q&A
+- No tool mutations
+
+### Beat 2 — Sources
+
+**You (ask / say / draw):** “Which sources and update rate?”
+
+**Interviewer:** SharePoint, S3, and databases; changes hourly.
+
+**You:** “Connectors need checkpoints, deletion handling, and incremental indexing.”
+
+**Board now:**
+- Heterogeneous connectors
+- Incremental sync
+
+### Beat 3 — Authorization
+
+**You (ask / say / draw):** “Must source ACLs be enforced per chunk at query time?”
+
+**Interviewer:** Absolutely.
+
+**You:** “Authorization filtering is a hard invariant, not a post-filter.”
+
+**Board now:**
+- Tenant and document ACLs
+- No unauthorized retrieval
+
+### Beat 4 — NFRs
+
+**You (ask / say / draw):** “Answer p95 under eight seconds, retrieval under 500 ms, index freshness under two hours, and every factual answer cited.”
+
+**Interviewer:** Eight seconds is acceptable if streaming starts in two.
+
+**You:** “I’ll optimize time-to-first-token separately.”
+
+**Board now:**
+- TTFT <2 s
+- Complete p95 <8 s
+
+### Beat 5 — Entities
+
+**You (ask / say / draw):** “Start Source, Document, DocumentVersion, Chunk, ACL, and IngestionRun.”
+
+**Interviewer:** Why version documents?
+
+**You:** “Index publication and deletion can switch versions atomically.”
+
+**Board now:**
+- Versioned corpus
+- Ingestion lineage
+
+### Beat 6 — Ingestion API
+
+**You (ask / say / draw):** “Connector emits upsert/delete records with source version and checkpoint; workers parse, chunk, embed, then publish an index manifest.”
+
+**Interviewer:** Retry?
+
+**You:** “Document version plus stage makes processing idempotent.”
+
+**Board now:**
+- Staged ingestion
+- Checkpointed replay
+
+### Beat 7 — Draw ingestion
+
+```mermaid
+flowchart LR
+  Sources[Enterprise Sources] --> Connect[Connectors]
+  Connect --> Q[Durable Work Queue]
+  Q --> Parse[Parse + Normalize]
+  Parse --> Chunk[Chunk + ACL]
+  Chunk --> Embed[Embedding Workers]
+  Embed --> Vec[(Vector Index)]
+  Parse --> Obj[(Versioned Document Store)]
+  Embed --> Catalog[(Metadata Catalog)]
+```
+
+While drawing say: “A version is searchable only after all required artifacts are published.”
+
+**Board now:**
+- Ingestion stages
+- Atomic version publication
+
+### Beat 8 — Query API
+
+**Interviewer:** Answer a question.
+
+**You (ask / say / draw):** “`POST /query` with conversation ID and question streams answer tokens, citations, and a trace ID.”
+
+**Interviewer:** Where is identity?
+
+**You:** “Gateway resolves user and groups; retrieval receives an authorization context.”
+
+**Board now:**
+- Streaming query
+- Auth context propagated
+
+### Beat 9 — Retrieval path
+
+**Interviewer:** Walk it.
+
+**You (ask / say / draw):** “Rewrite cautiously, run hybrid lexical/vector retrieval with ACL predicates, rerank, build a bounded prompt, generate, then verify citations.”
+
+**Interviewer:** Why hybrid?
+
+**You:** “Exact identifiers favor lexical; semantic questions favor vectors.”
+
+**Board now:**
+- Hybrid retrieval
+- Rerank and context budget
+
+### Beat 10 — Draw grounded answer
 
 ```mermaid
 sequenceDiagram
   participant U as User
-  participant A as API
-  participant V as Vector+Meta
+  participant O as Orchestrator
+  participant R as Retriever
+  participant P as Policy
   participant L as LLM
-
-  U->>A: question + tenant JWT
-  A->>A: expand ACL document allow-list
-  A->>V: retrieve top 50 → rerank top 5
-  V-->>A: chunks with doc ids
-  A->>L: prompt: answer ONLY from chunks; cite [#]
-  L-->>A: answer + citations
-  A->>A: verify each citation maps to retrieved chunk
-  alt citation missing
-    A-->>U: refuse / ask clarify
-  else ok
-    A-->>U: answer + sources
-    A->>A: write audit log
-  end
+  U->>O: question + identity
+  O->>P: resolve ACL filter
+  O->>R: hybrid search + filter
+  R-->>O: authorized chunks
+  O->>L: prompt + citations
+  L-->>O: streamed draft
+  O-->>U: answer + source spans
 ```
 
-**Grounded-answer sequence narration — say this while pointing:**
+While drawing say: “Unauthorized chunks never enter the prompt.”
 
-- JWT establishes tenant and principal before any search.
-- ACL filtering occurs during retrieval, not after confidential text reaches the model.
-- Top candidates are reranked into a small evidence set and the model must cite it.
-- Citation verification can refuse unsupported output; the audit trace makes the decision reproducible.
+**Board now:**
+- Policy before generation
+- Citation-bearing stream
 
-### 11.3 Tables
+### Beat 11 — Wrong turn and injection
 
-```text
-Tenant, Document(acl_roles[]), Chunk(doc_id, ordinal, text, hash),
-EmbeddingRef(chunk_id, model, vector_id),
-Conversation, Message, Citation(message_id, chunk_id, span),
-ToolCall(status, args, result), AuditEvent
-```
+**You (ask / say / draw):** “The model can decide whether a retrieved instruction is safe.”
 
-### 11.4 NFRs to emphasize (FDE / C3)
+**Interviewer:** That trusts untrusted content.
 
-* ACL **before** retrieval (security > recall)  
-* Citations mandatory  
-* Private model endpoint / VPC  
-* Eval set + prompt versioning before prod promote  
-* Cost controls: max tokens, cache embeddings  
+**You:** “Correct. Documents are data, not control instructions; system policy is isolated, content is delimited, and tool use is disabled in v1.”
 
-### 11.5 Close
+**Board now:**
+- Corrected trust boundary
+- Prompt-injection defenses
 
-> “Ingest and query are separate pipelines. Retrieval is ACL-aware. The model is not the source of truth—chunks are. Agents get typed tools, budgets, and audit logs.”
+### Beat 12 — Scale and close
 
+**Interviewer:** Ten-times corpus and QPS.
 
-### 11.A What the interviewer is grading
+**You (ask / say / draw):** “Shard indexes by tenant and corpus, cache embeddings for repeated queries, batch ingestion, and route large tenants to dedicated capacity.”
 
-- Frame Enterprise RAG / Agent Platform around the user journey and explicitly name the authoritative state.
-- Model the core resource—authorized context and tool capability—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: retrieval and tool execution never exceed the caller’s tenant and document permissions.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: grounded latency of seconds, strict tenant isolation, traceability, and cost budgets.
-- Explain the trade-off: sacrifice some recall and autonomy to preserve ACL safety and controllability.
-- Walk through failure recovery for stale ACLs, prompt injection, hallucinated citation, connector drift, or repeated side effect.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
+**Interviewer:** Close.
 
-### 11.B How to open (60 seconds)
+**You:** “Versioned ingestion gives reproducibility; authorization is enforced during retrieval; hybrid search and citation verification improve grounding. Quality, freshness, latency, and cost are measured per tenant.”
 
-**Say this:**
-
-> “I’ll design Enterprise RAG / Agent Platform by first fixing the v1 journey, scale, and consistency boundary. The critical resource is authorized context and tool capability, and my non-negotiable invariant is that retrieval and tool execution never exceed the caller’s tenant and document permissions. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume grounded latency of seconds, strict tenant isolation, traceability, and cost budgets. The key trade-off is to sacrifice some recall and autonomy to preserve ACL safety and controllability. After the happy path I’ll test retries, concurrency, and stale ACLs, prompt injection, hallucinated citation, connector drift, or repeated side effect. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 11.C Clarifying questions, APIs, and schema
-
-**Ask before drawing:**
-
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
-
-**API surface to put on the board:**
-
-- ingest source, ask, stream answer, run agent, approve tool call, and inspect trace.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
-
-**Schema spine:**
-
-- Document(tenant, acl, version), Chunk(hash), EmbeddingRef(model), Conversation, Citation, ToolCall(status), AuditEvent.
-- Put tenant/owner scope into every primary lookup involving authorized context and tool capability.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
-
-### 11.D Deep explanation of the hard invariant
-
-**Invariant:** Retrieval and tool execution never exceed the caller’s tenant and document permissions.
-
-Authorization must constrain retrieval before confidential text reaches the model, and every side-effecting tool call must match an allowed capability. Post-filtering model output is too late: the prompt, trace, or provider may already contain another tenant’s data. A retried agent step can also repeat a real-world action such as creating a ticket or changing equipment state.
-
-Bind tenant and principal from verified identity, expand current ACLs, and apply them in both vector and metadata queries. Store document/ACL versions with chunks so stale embeddings can be suppressed. Tool calls use typed schemas, allowlists, budgets, idempotency keys, and human approval for high-impact writes. Audit inputs, retrieved chunk IDs, model/prompt versions, tool decisions, and outputs; continuously test cross-tenant canaries and prompt-injection cases.
-
-### 11.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 11.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Source documents, acl metadata, and auditable tool records—not model output owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve retrieval and tool execution never exceed the caller’s tenant and document permissions. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for authorized context and tool capability. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 11.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps source documents, ACL metadata, and auditable tool records—not model output authoritative for authorized context and tool capability. The hard guarantee is that retrieval and tool execution never exceed the caller’s tenant and document permissions, enforced atomically rather than inferred from cache. The main path meets grounded latency of seconds, strict tenant isolation, traceability, and cost budgets, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
+**Board now:**
+- Tenant-scaled indexes
+- Security and quality invariants
 
 ---
 
-## 12. IoT / Telemetry Ingestion
+## 12. IoT / Telemetry Ingestion — shorter progressive sketch
 
-### 12.1 Architecture
+### Beat 1 — Clarify devices
 
-```mermaid
-flowchart TB
-  Dev[Sensors / PLCs / Edge gateways] --> Proto[MQTT / HTTPS / OPC-UA]
-  Proto --> Edge[Edge ingest + buffer]
-  Edge --> K[Kafka site→region]
-  K --> RT[Realtime rules]
-  K --> TS[(TSDB)]
-  K --> Lake[S3 Parquet]
-  Reg[Device registry] --> PG[(Postgres)]
-  Twin[Digital twin] --> Redis
-  RT --> CMMS[Tickets / maintenance]
-```
+**Interviewer:** Design IoT ingestion.
 
-**Architecture narration — say this while pointing:**
+**You (ask / say / draw):** “How many devices, message rate, and offline duration?”
 
-- Industrial protocols terminate at an edge gateway that authenticates and buffers during disconnection.
-- Kafka absorbs reconnect backfill and fans one event stream to rules, TSDB, and the lake.
-- Registry stores durable identity and credentials; Redis twin is a fast latest-state projection.
-- Realtime rules create maintenance actions without coupling ingestion to the CMMS availability.
+**Interviewer:** Ten million devices, one message/minute, offline for a day.
 
-### 12.2 Guarantees
+**You:** “Reconnect bursts and replay are key.”
 
-| Issue | Approach |
-|-------|----------|
-| Dupes | Idempotent key `(device_id, event_id)` |
-| Clock skew | Store `device_ts` + `received_ts` |
-| Backfill storm | Edge buffer + Kafka lag autoscaling |
-| Exactly-once | Effectively-once via idempotent sinks |
+**Board now:**
+- 10M devices
+- Buffered reconnect
 
-### 12.3 Device twin
+### Beat 2 — NFRs
 
-```text
-Redis: device:{id} → {state, last_seen, firmware, config_version}
-Postgres: durable registry + credentials
-```
+**You (ask / say / draw):** “Acknowledge under 300 ms after durable receipt, accept duplicates, preserve order per device where possible.”
 
+**Interviewer:** No acknowledged loss.
 
-### 12.A What the interviewer is grading
+**You:** “The broker append becomes the ACK boundary.”
 
-- Frame IoT / Telemetry around the user journey and explicitly name the authoritative state.
-- Model the core resource—device event stream and twin version—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a device event is attributable, deduplicated, and ordered only within the device scope where required.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: survive disconnected sites and reconnect storms with bounded data loss.
-- Explain the trade-off: accept out-of-order events and reconcile using event identity and timestamps.
-- Walk through failure recovery for clock skew, duplicated backfill, revoked credentials, schema drift, or edge outage.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
+**Board now:**
+- Durable ACK
+- Per-device order
 
-### 12.B How to open (60 seconds)
+### Beat 3 — Contract
 
-**Say this:**
+**You (ask / say / draw):** “Message carries tenant, device ID, sequence, device time, schema version, and payload.”
 
-> “I’ll design IoT / Telemetry by first fixing the v1 journey, scale, and consistency boundary. The critical resource is device event stream and twin version, and my non-negotiable invariant is that a device event is attributable, deduplicated, and ordered only within the device scope where required. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume survive disconnected sites and reconnect storms with bounded data loss. The key trade-off is to accept out-of-order events and reconcile using event identity and timestamps. After the happy path I’ll test retries, concurrency, and clock skew, duplicated backfill, revoked credentials, schema drift, or edge outage. If you prefer, I can go deeper on schema and races or on distributed scaling.”
+**Interviewer:** Clock skew?
 
-### 12.C Clarifying questions, APIs, and schema
+**You:** “Store device time and ingest time; validate but do not overwrite.”
 
-**Ask before drawing:**
+**Board now:**
+- Sequence and schema version
+- Dual timestamps
 
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
+### Beat 4 — Device API
 
-**API surface to put on the board:**
+**You (ask / say / draw):** “MQTT publish or HTTPS batch with device credentials; response includes highest contiguous sequence.”
 
-- publish batch, register device, read telemetry, read/update twin, and replay range.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
+**Interviewer:** Retry?
 
-**Schema spine:**
+**You:** “Deduplicate by device and sequence within retention.”
 
-- Device(tenant, credentials, status), Telemetry(device_id, event_id, device_ts, received_ts, payload), Twin(version, desired, reported).
-- Put tenant/owner scope into every primary lookup involving device event stream and twin version.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
+**Board now:**
+- MQTT/HTTPS ingress
+- Sequence dedupe
 
-### 12.D Deep explanation of the hard invariant
-
-**Invariant:** A device event is attributable, deduplicated, and ordered only within the device scope where required.
-
-Industrial networks disconnect and replay buffered data, device clocks drift, and brokers redeliver. Without stable identity, the same reading can trigger duplicate maintenance work; without both device and receive time, late data can overwrite a newer twin and corrupt event-time analysis.
-
-Authenticate device and tenant at the edge, assign or validate `(device_id, event_id)`, and retain `device_ts`, `received_ts`, and schema version. The durable log accepts out-of-order events; idempotent sinks dedupe by event ID. Twin updates use a monotonic device sequence or version CAS, so an older replay cannot replace newer reported state. Rules emit idempotent action IDs and operators can quarantine and replay a device range.
-
-### 12.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 12.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Durable event log plus registry; twin is a materialized view owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a device event is attributable, deduplicated, and ordered only within the device scope where required. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for device event stream and twin version. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 12.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps durable event log plus registry; twin is a materialized view authoritative for device event stream and twin version. The hard guarantee is that a device event is attributable, deduplicated, and ordered only within the device scope where required, enforced atomically rather than inferred from cache. The main path meets survive disconnected sites and reconnect storms with bounded data loss, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 13. Notification System
-
-### 13.1 Architecture
-
-```mermaid
-flowchart TB
-  Prod[Product services] --> NAPI[Notification API]
-  NAPI --> Pref[(Prefs / quiet hours / consent)]
-  NAPI --> K[Kafka by channel]
-  K --> Email
-  K --> SMS
-  K --> Push
-  K --> InApp
-  Email --> Prov[SES/Twilio/FCM]
-  Email --> DLQ
-  SMS --> DLQ
-  NAPI --> Outbox[(Outbox table optional)]
-```
-
-**Architecture narration — say this while pointing:**
-
-- Product services submit a logical intent, not provider-specific calls.
-- Notification API resolves consent, quiet hours, template, locale, and dedupe before enqueueing.
-- Channel partitions isolate provider failures; workers retry and dead-letter terminal poison work.
-- Provider callbacks update delivery attempts, while campaigns are chunked into bounded jobs.
-
-### 13.2 Deduping
-
-Unique `(user_id, template_id, dedupe_key)` for 24h. Retries use same key.
-
-### 13.3 Fan-out
-
-Large audience → chunk into 1k-user jobs; progress in DB; don’t put 10M IDs in one message.
-
-
-### 13.A What the interviewer is grading
-
-- Frame Notification System around the user journey and explicitly name the authoritative state.
-- Model the core resource—notification intent—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a logical notification respects consent and dedupe rules while every provider attempt is traceable.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: interactive sends in seconds; campaigns tolerate minutes and require backpressure.
-- Explain the trade-off: at-least-once queue delivery with idempotent provider-facing workers.
-- Walk through failure recovery for duplicate event, provider timeout, opt-out race, poison template, or 10M-user fan-out.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 13.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Notification System by first fixing the v1 journey, scale, and consistency boundary. The critical resource is notification intent, and my non-negotiable invariant is that a logical notification respects consent and dedupe rules while every provider attempt is traceable. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume interactive sends in seconds; campaigns tolerate minutes and require backpressure. The key trade-off is to at-least-once queue delivery with idempotent provider-facing workers. After the happy path I’ll test retries, concurrency, and duplicate event, provider timeout, opt-out race, poison template, or 10M-user fan-out. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 13.C Clarifying questions, APIs, and schema
-
-**Ask before drawing:**
-
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
-
-**API surface to put on the board:**
-
-- send, schedule, cancel, fetch status, update preferences, and provider webhook.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
-
-**Schema spine:**
-
-- Notification(user_id, template_id, dedupe_key, status), Preference(channel, consent, quiet_hours), DeliveryAttempt(provider_ref, attempt, status).
-- Put tenant/owner scope into every primary lookup involving notification intent.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
-
-### 13.D Deep explanation of the hard invariant
-
-**Invariant:** A logical notification respects consent and dedupe rules while every provider attempt is traceable.
-
-A logical notification must not bypass consent, quiet hours, or dedupe policy, even when the producer or queue retries. The system may deliver at least once technically, but repeatedly charging for SMS or messaging an opted-out user is a product and compliance failure.
-
-Create one durable `Notification` intent under a unique `(tenant, user, template, dedupe_key)` constraint after evaluating a versioned preference snapshot. Each channel attempt has its own provider idempotency key and status history. Preference changes cancel queued-but-unsent work; provider callbacks update attempts idempotently. Quiet-hour scheduling uses the user’s timezone, and campaigns are chunked so opt-outs and backpressure can be applied between batches.
-
-### 13.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 13.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Notification and delivery-attempt records owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a logical notification respects consent and dedupe rules while every provider attempt is traceable. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for notification intent. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 13.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps notification and delivery-attempt records authoritative for notification intent. The hard guarantee is that a logical notification respects consent and dedupe rules while every provider attempt is traceable, enforced atomically rather than inferred from cache. The main path meets interactive sends in seconds; campaigns tolerate minutes and require backpressure, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 14. Chat / Messaging
-
-### 14.1 Architecture
-
-```mermaid
-flowchart TB
-  CA[Client A] --> WS[WS Gateway / presence]
-  CB[Client B] --> WS
-  WS --> Msg[Message Service]
-  Msg --> Store[(Cassandra / Dynamo by conv_id + ts)]
-  Msg --> Fan[Fanout service]
-  Fan --> WS
-  Msg --> Push[Offline push]
-  Msg --> MQ[Kafka for async integrations]
-  WS --> Pres[(Redis presence / conn map)]
-```
-
-**Architecture narration — say this while pointing:**
-
-- WebSocket gateways own ephemeral connections and presence, not message truth.
-- Message Service assigns a conversation sequence and durably stores before acknowledging.
-- Fanout routes to currently connected recipients; offline push is only a wake-up hint.
-- Kafka carries noncritical integrations, and Redis presence can be rebuilt after failure.
-
-### 14.2 Delivery guarantees
-
-* Client `client_msg_id` for idempotent send  
-* Per-connection ACK; store-and-forward if offline  
-* Read receipts async  
-
-### 14.3 Ordering
-
-Order within a conversation partition; don’t claim global total order.
-
-
-### 14.A What the interviewer is grading
-
-- Frame Chat / Messaging around the user journey and explicitly name the authoritative state.
-- Model the core resource—conversation sequence—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: within a conversation, accepted messages have stable identities and a deterministic order; retries do not duplicate them.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: low-latency online delivery with durable offline sync.
-- Explain the trade-off: guarantee per-conversation order rather than impossible global order.
-- Walk through failure recovery for reconnect, duplicate send, fan-out failure, membership change, or regional split.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
-
-### 14.B How to open (60 seconds)
-
-**Say this:**
-
-> “I’ll design Chat / Messaging by first fixing the v1 journey, scale, and consistency boundary. The critical resource is conversation sequence, and my non-negotiable invariant is that within a conversation, accepted messages have stable identities and a deterministic order; retries do not duplicate them. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume low-latency online delivery with durable offline sync. The key trade-off is to guarantee per-conversation order rather than impossible global order. After the happy path I’ll test retries, concurrency, and reconnect, duplicate send, fan-out failure, membership change, or regional split. If you prefer, I can go deeper on schema and races or on distributed scaling.”
-
-### 14.C Clarifying questions, APIs, and schema
-
-**Ask before drawing:**
-
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
-
-**API surface to put on the board:**
-
-- connect, send message, sync since cursor, acknowledge/read, and manage membership.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
-
-**Schema spine:**
-
-- Conversation, Member(role, joined_seq), Message(conv_id, seq, client_msg_id UNIQUE per sender, body, created_at), Receipt.
-- Put tenant/owner scope into every primary lookup involving conversation sequence.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
-
-### 14.D Deep explanation of the hard invariant
-
-**Invariant:** Within a conversation, accepted messages have stable identities and a deterministic order; retries do not duplicate them.
-
-Retries must not create duplicate messages, and members must observe a deterministic order within a conversation. Network arrival order is insufficient: two gateways can receive simultaneous sends, and reconnecting clients can replay old commands. Global order is unnecessary and would create a bottleneck.
-
-Deduplicate on `(conversation_id, sender_id, client_msg_id)`. A conversation owner or partition allocates a monotonically increasing `seq` in the same durable write as the message. Clients sync from their last sequence and reorder transient websocket delivery by `seq`; missing ranges trigger fetch. Membership checks use the sequence at which a user joined or left so history authorization is explicit.
-
-### 14.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 14.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Durable message store keyed by conversation and sequence owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve within a conversation, accepted messages have stable identities and a deterministic order; retries do not duplicate them. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for conversation sequence. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 14.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps durable message store keyed by conversation and sequence authoritative for conversation sequence. The hard guarantee is that within a conversation, accepted messages have stable identities and a deterministic order; retries do not duplicate them, enforced atomically rather than inferred from cache. The main path meets low-latency online delivery with durable offline sync, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 15. Distributed Job / Workflow System
-
-### 15.1 Architecture
+### Beat 5 — Architecture
 
 ```mermaid
 flowchart LR
-  API[Job API] --> DB[(Jobs Postgres)]
-  API --> Q[Kafka/SQS]
-  Q --> W[Workers]
-  W --> DB
-  W --> DLQ
-  Sched[Cron] --> API
-  W --> Hooks[Webhooks on terminal state]
+  Device --> Edge[Regional IoT Edge]
+  Edge --> Auth[Device Auth]
+  Auth --> Broker[Durable Broker]
+  Broker --> Validate[Schema Validator]
+  Validate --> TS[(Time-series Store)]
+  Validate --> Twin[(Device Twin)]
+  Validate --> Lake[(Object Lake)]
+  Broker --> DLQ[Quarantine]
 ```
 
-**Architecture narration — say this while pointing:**
+While drawing say: “Broker partitions by device ID; malformed data is quarantined without blocking the partition forever.”
 
-- API durably creates a job, ideally with an outbox event, before telling the caller it is accepted.
-- Queue distributes attempts; workers claim a lease and update durable state.
-- DLQ isolates poison work, scheduler submits recurring jobs, and webhooks follow terminal transitions.
-- Every arrow may repeat, so job and webhook identities are stable.
+**Board now:**
+- Durable fan-out
+- Quarantine path
 
-### 15.2 State machine
+### Beat 6 — Wrong turn
 
-```mermaid
-stateDiagram-v2
-  [*] --> queued
-  queued --> running
-  running --> succeeded
-  running --> failed
-  failed --> queued: retry if attempts < max
-  failed --> dead: else
-  running --> cancelled
-```
+**You (ask / say / draw):** “We can reject any out-of-order reading.”
 
-**State-diagram narration — say this while pointing:**
+**Interviewer:** Offline devices replay older readings.
 
-- Queued work becomes Running only through a lease/CAS claim.
-- Success is terminal; failure either creates a delayed retry attempt or becomes Dead.
-- Cancellation is conditional and cooperative for already-running work.
-- Attempt history is separate from logical job state so operators can explain every retry.
+**You:** “Correct. Store them by event time; only twin updates require monotonic sequence guards.”
 
-### 15.3 Worker contract
+**Board now:**
+- Corrected late-data policy
+- Twin monotonicity
 
-1. Receive message  
-2. CAS `queued → running` (prevent double run)  
-3. Execute idempotently  
-4. Mark terminal + commit offset  
-5. On crash: visibility timeout returns to queue  
+### Beat 7 — Failure and scale
 
+**Interviewer:** A million devices reconnect.
 
-### 15.A What the interviewer is grading
+**You (ask / say / draw):** “Randomized client backoff, regional admission control, durable broker buffering, and per-tenant quotas.”
 
-- Frame Distributed Job / Workflow around the user journey and explicitly name the authoritative state.
-- Model the core resource—job attempt lease—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: a queued attempt is claimed by at most one active lease, while retries make effects idempotent.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: durable acceptance, bounded queue delay, fair tenant quotas, and replayability.
-- Explain the trade-off: at-least-once execution because exactly-once external side effects are not generally possible.
-- Walk through failure recovery for worker crash, lost ACK, poison task, lease expiry during work, or webhook duplication.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
+**Interviewer:** Consumer lag?
 
-### 15.B How to open (60 seconds)
+**You:** “Autoscale by lag; reject before ACK only if broker safety is threatened.”
 
-**Say this:**
+**Board now:**
+- Reconnect smoothing
+- Lag-based protection
 
-> “I’ll design Distributed Job / Workflow by first fixing the v1 journey, scale, and consistency boundary. The critical resource is job attempt lease, and my non-negotiable invariant is that a queued attempt is claimed by at most one active lease, while retries make effects idempotent. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume durable acceptance, bounded queue delay, fair tenant quotas, and replayability. The key trade-off is to at-least-once execution because exactly-once external side effects are not generally possible. After the happy path I’ll test retries, concurrency, and worker crash, lost ACK, poison task, lease expiry during work, or webhook duplication. If you prefer, I can go deeper on schema and races or on distributed scaling.”
+### Beat 8 — Close
 
-### 15.C Clarifying questions, APIs, and schema
+**You:** “Device sequence makes replay idempotent; durable append defines acknowledgment; event time preserves late telemetry while guarded sequence updates protect the twin.”
 
-**Ask before drawing:**
-
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
-
-**API surface to put on the board:**
-
-- submit, get status, cancel, retry, list, and heartbeat/complete worker lease.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
-
-**Schema spine:**
-
-- Job(type, payload_ref, status, idempotency_key), Attempt(job_id, lease_owner, lease_until, status), WorkflowEdge, Outbox.
-- Put tenant/owner scope into every primary lookup involving job attempt lease.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
-
-### 15.D Deep explanation of the hard invariant
-
-**Invariant:** A queued attempt is claimed by at most one active lease, while retries make effects idempotent.
-
-A queue can deliver an attempt more than once, especially when a worker finishes but crashes before acknowledging. The design must prevent two live workers from believing they own one attempt, yet it cannot promise exactly-once effects against arbitrary external systems.
-
-Claim with a conditional `queued -> running` update that writes `lease_owner` and `lease_until`. The worker heartbeats by CAS; only the current lease owner may commit completion. On expiry, a new attempt can run, so handlers use job idempotency keys or downstream operation IDs. Record every attempt, use exponential backoff and a DLQ, and publish terminal webhooks through an outbox with independent delivery dedupe.
-
-### 15.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 15.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Durable job state and attempt history owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve a queued attempt is claimed by at most one active lease, while retries make effects idempotent. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for job attempt lease. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 15.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps durable job state and attempt history authoritative for job attempt lease. The hard guarantee is that a queued attempt is claimed by at most one active lease, while retries make effects idempotent, enforced atomically rather than inferred from cache. The main path meets durable acceptance, bounded queue delay, fair tenant quotas, and replayability, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
+**Board now:**
+- ACK invariant
+- Late-data distinction
 
 ---
 
-## 16. Feature Store / Model Serving
+## 13. Notification System — shorter progressive sketch
 
-### 16.1 Architecture
+### Beat 1 — Channels
 
-```mermaid
-flowchart TB
-  Batch[Batch pipelines] --> Off[(Offline warehouse features)]
-  Stream[Stream] --> On[(Online Redis/Dynamo)]
-  Off --> Mat[Materialization jobs]
-  Mat --> On
-  Pred[Prediction API] --> On
-  Pred --> Model[Model server]
-  Model --> Reg[Model registry]
-  Pred --> Log[Feature + prediction log]
-  Log --> Lake[Training lake]
-```
+**Interviewer:** Design notifications.
 
-**Architecture narration — say this while pointing:**
+**You (ask / say / draw):** “Email, SMS, push, and in-app? Transactional and marketing?”
 
-- Batch and stream pipelines produce the same versioned feature definitions into offline and online stores.
-- Materialization copies freshness-bounded values to the low-latency online path.
-- Prediction API fetches an explicit feature version and calls a versioned model.
-- Feature and prediction logs return to the lake for monitoring, debugging, and future training.
+**Interviewer:** All, with user preferences.
 
-### 16.2 Talk track
+**You:** “Policy and channel delivery must be separate.”
 
-Point-in-time joins for training; online path only uses features available at request time; registry supports rollback; shadow mode before promote.
+**Board now:**
+- Four channels
+- Transactional versus marketing
 
+### Beat 2 — NFRs
 
-### 16.A What the interviewer is grading
+**You (ask / say / draw):** “Transactional p95 enqueue under 200 ms and delivery attempt under 30 seconds; marketing can lag.”
 
-- Frame Feature Store / Model Serving around the user journey and explicitly name the authoritative state.
-- Model the core resource—versioned feature value and model deployment—with lifecycle, keys, and access-path indexes.
-- State the hard invariant: online inference uses the same feature definitions and event-time semantics as training, without future leakage.
-- Show retry-safe command APIs with idempotency keys and meaningful conflict responses.
-- Choose NFRs that drive the design: online feature fetch in tens of milliseconds with freshness and availability SLOs.
-- Explain the trade-off: denormalize online values for speed while retaining offline lineage and reproducibility.
-- Walk through failure recovery for training-serving skew, stale online data, leaked future value, model regression, or missing feature.
-- Add tenant isolation, auditability, metrics, and an operator repair path where enterprise use requires them.
+**Interviewer:** Never send duplicate password resets.
 
-### 16.B How to open (60 seconds)
+**You:** “We need semantic dedupe and provider idempotency where available.”
 
-**Say this:**
+**Board now:**
+- Priority classes
+- Bounded duplicate prevention
 
-> “I’ll design Feature Store / Model Serving by first fixing the v1 journey, scale, and consistency boundary. The critical resource is versioned feature value and model deployment, and my non-negotiable invariant is that online inference uses the same feature definitions and event-time semantics as training, without future leakage. I’ll model the durable state and APIs first, then draw the synchronous path and asynchronous work. I’ll assume online feature fetch in tens of milliseconds with freshness and availability SLOs. The key trade-off is to denormalize online values for speed while retaining offline lineage and reproducibility. After the happy path I’ll test retries, concurrency, and training-serving skew, stale online data, leaked future value, model regression, or missing feature. If you prefer, I can go deeper on schema and races or on distributed scaling.”
+### Beat 3 — Entities
 
-### 16.C Clarifying questions, APIs, and schema
+**You (ask / say / draw):** “Notification, TemplateVersion, Preference, DeliveryAttempt, and Suppression.”
 
-**Ask before drawing:**
+**Interviewer:** Why template version?
 
-- Who are the actors and which one journey must v1 complete?
-- What peak load, object/event size, retention, and read:write ratio should I assume?
-- Which response must be immediate, and which work may complete asynchronously?
-- Which state must be strongly consistent, and how stale may discovery or analytics be?
-- Are multi-tenancy, regional residency, audit, deletion, or disconnected operation in scope?
+**You:** “Audit exactly what content was rendered.”
 
-**API surface to put on the board:**
+**Board now:**
+- Versioned templates
+- Attempt history
 
-- get online features, batch point-in-time join, register feature, predict, and promote/rollback model.
-- Every mutating endpoint carries an idempotency key or expected version.
-- List endpoints use cursor pagination; asynchronous commands return an operation/status resource.
-- Conflicts return `409`, validation returns `422`, quota returns `429`, and transient dependency failure returns `503`.
+### Beat 4 — API
 
-**Schema spine:**
+**You (ask / say / draw):** “`POST /notifications` with event key, recipient, template, variables, priority, and Idempotency-Key returns 202.”
 
-- FeatureDefinition(name, version, owner), FeatureValue(entity, event_ts, value), MaterializationRun, ModelVersion, PredictionLog.
-- Put tenant/owner scope into every primary lookup involving versioned feature value and model deployment.
-- Add a unique idempotency constraint, explicit status enum, `created_at/updated_at`, and `version` where optimistic concurrency is useful.
-- Index the list/read path, the contested-resource lookup, and worker scans such as `(status, next_attempt_at)` or expiry.
+**Interviewer:** Retry?
 
-### 16.D Deep explanation of the hard invariant
+**You:** “Unique tenant plus key returns the original notification.”
 
-**Invariant:** Online inference uses the same feature definitions and event-time semantics as training, without future leakage.
+**Board now:**
+- Async create
+- Idempotent acceptance
 
-The invariant is semantic rather than a single-row race: training must see only feature values available at each historical prediction time, and serving must use the same definition/version. Leakage can make offline accuracy look excellent while production fails; stale or mismatched transformations create silent training-serving skew.
-
-Version feature definitions, transformation code, source schema, and entity keys. Offline joins select the latest event-time value whose availability timestamp is not after the label cutoff. Materialization records definition version and watermark; the prediction request fetches an explicit compatible feature set and enforces freshness/default policy. Log actual feature values with model version, compare online/offline samples, and block promotion when skew or freshness SLOs fail.
-
-### 16.E Common mistakes that fail the round
-
-- Drawing components before saying what is in scope and what must be correct.
-- Using a cache lookup as proof that a contested resource is available.
-- Checking state and updating it in separate, unprotected operations.
-- Ignoring duplicate client requests, queue redelivery, and provider callbacks.
-- Naming a database without giving keys, constraints, indexes, or retention.
-- Scaling every component before estimating the actual bottleneck.
-
-### 16.F Follow-up Q&A
-
-**Q: Why not make the cache authoritative?**  
-**A:** The cache optimizes latency but can be stale, evicted, or partitioned. Offline history for training plus freshness-bounded online materialization owns the decision; cache state is derived and repairable.
-
-**Q: What happens when the same request is retried?**  
-**A:** The caller sends a stable idempotency key scoped to the actor and operation. A unique constraint stores the first outcome, so retries return that result instead of repeating the mutation.
-
-**Q: Where is the transaction boundary?**  
-**A:** It surrounds the minimum state needed to preserve online inference uses the same feature definitions and event-time semantics as training, without future leakage. External calls stay outside; their results are reconciled with an outbox, callback, or explicit compensation.
-
-**Q: How do you scale this ten times?**  
-**A:** Measure the hot access path first, then partition by the natural ownership key for versioned feature value and model deployment. Add caches or projections for reads while keeping all writes for one invariant on one authoritative owner.
-
-**Q: How do you know it is healthy?**  
-**A:** Track latency and error SLOs plus a business-integrity metric for rejected conflicts, duplicate suppression, stale work, and reconciliation age. Correlation IDs connect API, event, worker, and external-provider traces.
-
-**Q: What changes for enterprise multi-tenancy?**  
-**A:** Put tenant identity in authorization, keys, partitions, quotas, encryption context, and audit logs. No cache, queue message, search filter, or operator tool may omit tenant scope.
-
-### 16.G Close script (30–45 seconds)
-
-**Say this:**
-
-> “The design keeps offline history for training plus freshness-bounded online materialization authoritative for versioned feature value and model deployment. The hard guarantee is that online inference uses the same feature definitions and event-time semantics as training, without future leakage, enforced atomically rather than inferred from cache. The main path meets online feature fetch in tens of milliseconds with freshness and availability SLOs, while asynchronous work absorbs retries and isolates dependencies. I would watch the invariant-conflict rate, end-to-end latency, backlog, and reconciliation age. The first scale lever is partitioning by the resource owner; the first enterprise additions are tenant-scoped authorization, audit, quotas, and operator replay.”
-
-
----
-
-## 17. Cross-Cutting Patterns
-
-### 17.1 Universal booking pattern
+### Beat 5 — Architecture
 
 ```mermaid
 flowchart LR
-  S[Search eventual] --> H[Hold + TTL]
-  H --> P[Pay authorize]
-  P --> C[Confirm strong]
-  H --> X[Expire worker]
-  C --> F[Fulfill]
+  App --> API[Notification API]
+  API --> DB[(Notification DB)]
+  DB --> Out[Outbox]
+  Out --> Router[Preference + Policy Router]
+  Router --> EQ[Email Queue]
+  Router --> SQ[SMS Queue]
+  Router --> PQ[Push Queue]
+  EQ --> Providers[Providers]
+  SQ --> Providers
+  PQ --> Providers
 ```
 
-### 17.2 Outbox pattern
+While drawing say: “Each channel has independent retries, rate limits, and circuit breakers.”
 
-```mermaid
-sequenceDiagram
-  participant S as Service
-  participant DB as Postgres
-  participant B as Outbox poller
-  participant K as Kafka
+**Board now:**
+- Durable routing
+- Channel isolation
 
-  S->>DB: txn: business row + outbox row
-  B->>DB: read outbox
-  B->>K: publish
-  B->>DB: mark sent
-```
+### Beat 6 — Preferences race
 
-### 17.3 Cache patterns
+**Interviewer:** User unsubscribes while a campaign is queued.
 
-| Pattern | Use |
-|---------|-----|
-| Cache-aside | Pastebin reads, availability |
-| Write-through | Rare; simpler consistency |
-| TTL + jitter | Avoid stampedes |
-| Singleflight | Hot key miss |
+**You (ask / say / draw):** “Recheck preference and suppression immediately before provider send.”
 
-### 17.4 When to pick stores
+**Interviewer:** Transactional messages?
 
-| Data | Store |
-|------|-------|
-| Bookings, users, money | Postgres |
-| Hot keys / locks / GEO / rate limits | Redis |
-| Spiky ingest | Kafka |
-| Blobs | S3 |
-| Time series | TSDB |
-| Vectors | Vector DB |
-| Huge append messages | Cassandra/Dynamo |
+**You:** “Policy class decides which preferences apply.”
+
+**Board now:**
+- Send-time policy check
+- Message classification
+
+### Beat 7 — Provider failure
+
+**Interviewer:** SMS provider is down.
+
+**You (ask / say / draw):** “Retry with jitter, circuit-break, optionally fail over, and dead-letter terminal failures.”
+
+**Interviewer:** Could failover duplicate?
+
+**You:** “Track provider attempt IDs and reconcile ambiguous responses before switching.”
+
+**Board now:**
+- Ambiguous-send handling
+- DLQ and failover
+
+### Beat 8 — Close
+
+**You:** “Durable acceptance is separate from delivery. Idempotency controls requests, send-time preference checks control policy, and per-channel workers contain provider failures.”
+
+**Board now:**
+- Acceptance/delivery boundary
+- Policy invariant
 
 ---
 
-## 18. Capacity Estimation Workbook
+## 14. Chat / Messaging — shorter progressive sketch
 
-### Template
+### Beat 1 — Scope
+
+**Interviewer:** Design chat.
+
+**You (ask / say / draw):** “One-to-one and groups, multi-device sync, read receipts, and attachments?”
+
+**Interviewer:** Yes, groups up to 1,000.
+
+**You:** “Conversation ordering and fan-out are central.”
+
+**Board now:**
+- 1:1 and groups
+- Multi-device sync
+
+### Beat 2 — Semantics
+
+**You (ask / say / draw):** “Do we require global order or order within a conversation?”
+
+**Interviewer:** Within a conversation.
+
+**You:** “Assign a monotonically increasing conversation sequence.”
+
+**Board now:**
+- Per-conversation order
+- No global order
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “Send ACK under 300 ms after durable commit; online delivery under one second; at-least-once delivery with client dedupe.”
+
+**Interviewer:** Good.
+
+**You:** “Server message ID and client message ID support both sides.”
+
+**Board now:**
+- Durable send ACK
+- Dedupe IDs
+
+### Beat 4 — Model and API
+
+**You (ask / say / draw):** “Conversation, Membership, Message, DeviceCursor. `POST /conversations/{id}/messages` includes clientMessageId.”
+
+**Interviewer:** Retry?
+
+**You:** “Unique sender plus clientMessageId returns the existing message.”
+
+**Board now:**
+- Core entities
+- Idempotent send
+
+### Beat 5 — Architecture
+
+```mermaid
+flowchart LR
+  Clients --> Realtime[Realtime Gateways]
+  Realtime --> Msg[Message Service]
+  Msg --> DB[(Conversation Log)]
+  DB --> Out[Commit Stream]
+  Out --> Fan[Fan-out Workers]
+  Fan --> Realtime
+  Fan --> Inbox[(Offline Inbox/Cursors)]
+  Msg --> Obj[(Attachment Store)]
+```
+
+While drawing say: “The conversation log is durable truth; sockets are delivery channels.”
+
+**Board now:**
+- Durable log
+- Online/offline fan-out
+
+### Beat 6 — Race and order
+
+**Interviewer:** Two members send simultaneously.
+
+**You (ask / say / draw):** “The conversation’s home shard allocates sequence numbers atomically.”
+
+**Interviewer:** Hot group?
+
+**You:** “One sequencer remains a limit; batch allocation or logical subthreads are later trade-offs.”
+
+**Board now:**
+- Home-shard sequence
+- Hot-conversation limit
+
+### Beat 7 — Failure
+
+**Interviewer:** Gateway disconnects after delivery.
+
+**You (ask / say / draw):** “Client ACK cursor may be lost, so reconnect fetches after last durable cursor and deduplicates message IDs.”
+
+**Interviewer:** Exactly once?
+
+**You:** “No; at-least-once delivery plus idempotent rendering.”
+
+**Board now:**
+- Cursor-based catch-up
+- Honest delivery semantics
+
+### Beat 8 — Close
+
+**You:** “A home shard gives per-conversation sequence; durable commit precedes ACK; gateways and fan-out may duplicate, so devices resume by cursor and dedupe.”
+
+**Board now:**
+- Ordering invariant
+- Reconnect behavior
+
+---
+
+## 15. Distributed Job / Workflow System — shorter progressive sketch
+
+### Beat 1 — Scope
+
+**Interviewer:** Design a job system.
+
+**You (ask / say / draw):** “Independent tasks only, or DAG workflows with retries and schedules?”
+
+**Interviewer:** DAGs, retries, and schedules.
+
+**You:** “We need workflow state plus leased task execution.”
+
+**Board now:**
+- DAG workflows
+- Scheduled and retryable tasks
+
+### Beat 2 — Semantics
+
+**You (ask / say / draw):** “Can handlers be idempotent?”
+
+**Interviewer:** Usually, but not always.
+
+**You:** “The platform offers at-least-once; non-idempotent effects need an external idempotency contract.”
+
+**Board now:**
+- At-least-once execution
+- Handler responsibility
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “No accepted workflow loss, schedule drift under five seconds, and fair tenant scheduling.”
+
+**Interviewer:** One tenant may submit millions.
+
+**You:** “Admission quotas and weighted queues prevent starvation.”
+
+**Board now:**
+- Durable acceptance
+- Tenant fairness
+
+### Beat 4 — Model and API
+
+**You (ask / say / draw):** “WorkflowRun, TaskRun, Dependency, Attempt, and Lease. `POST /workflows/{type}/runs` uses an idempotency key.”
+
+**Interviewer:** Status?
+
+**You:** “PENDING, RUNNING, SUCCEEDED, FAILED, CANCELLED.”
+
+**Board now:**
+- Run and attempt entities
+- Idempotent submission
+
+### Beat 5 — Architecture
+
+```mermaid
+flowchart LR
+  Client --> API[Workflow API]
+  API --> DB[(Run State DB)]
+  DB --> Out[Outbox]
+  Out --> Ready[Ready Queues]
+  Ready --> Workers
+  Workers --> Lease[Lease / Heartbeat]
+  Lease --> DB
+  DB --> Scheduler
+  Scheduler --> Ready
+```
+
+While drawing say: “The queue announces readiness; database state decides whether a lease is valid.”
+
+**Board now:**
+- Durable run state
+- Leased execution
+
+### Beat 6 — Worker crash
+
+**Interviewer:** Worker dies mid-task.
+
+**You (ask / say / draw):** “Lease expires; scheduler creates a new Attempt if retry policy allows.”
+
+**Interviewer:** Old worker returns late.
+
+**You:** “Fencing token prevents it from committing after lease ownership changed.”
+
+**Board now:**
+- Lease expiry
+- Fencing token
+
+### Beat 7 — Wrong turn
+
+**You (ask / say / draw):** “We can promise exactly-once jobs.”
+
+**Interviewer:** Across arbitrary side effects?
+
+**You:** “No. We promise durable state transitions and at-least-once attempts; handlers use idempotency or transactional outbox patterns.”
+
+**Board now:**
+- Corrected guarantee
+- Side-effect contract
+
+### Beat 8 — Close
+
+**You:** “Database state owns the DAG; queues are retryable signals. Leases and fencing handle crashes, while idempotent handlers make at-least-once execution safe.”
+
+**Board now:**
+- Ownership summary
+- Crash invariant
+
+---
+
+## 16. Feature Store / Model Serving — shorter progressive sketch
+
+### Beat 1 — Scope
+
+**Interviewer:** Design a feature store.
+
+**You (ask / say / draw):** “Offline training features, online serving, or both?”
+
+**Interviewer:** Both, with point-in-time correctness.
+
+**You:** “Training/serving consistency becomes the key theme.”
+
+**Board now:**
+- Offline + online
+- Point-in-time joins
+
+### Beat 2 — Freshness
+
+**You (ask / say / draw):** “Batch and streaming features? Required online freshness?”
+
+**Interviewer:** Both; some features within ten seconds.
+
+**You:** “We need batch backfills and streaming materialization with versioned definitions.”
+
+**Board now:**
+- Batch and stream
+- ≤10 s fresh online subset
+
+### Beat 3 — NFRs
+
+**You (ask / say / draw):** “Online reads p99 under 10 ms, 99.99% available, no cross-tenant leakage, and reproducible training snapshots.”
+
+**Interviewer:** What if a feature is missing?
+
+**You:** “Schema defines default or fail policy; responses include freshness.”
+
+**Board now:**
+- 10 ms serving
+- Explicit missing policy
+
+### Beat 4 — Entities and API
+
+**You (ask / say / draw):** “FeatureDefinition, FeatureVersion, EntityKey, FeatureValue, MaterializationRun. `GetFeatures(entity, featureVersionSet)` returns values and timestamps.”
+
+**Interviewer:** Why version set?
+
+**You:** “Models must pin the exact feature semantics used in training.”
+
+**Board now:**
+- Versioned definitions
+- Model-pinned feature set
+
+### Beat 5 — Architecture
+
+```mermaid
+flowchart LR
+  Sources --> Batch[Batch Compute]
+  Sources --> Stream[Stream Compute]
+  Batch --> Offline[(Offline Store)]
+  Stream --> Offline
+  Batch --> Online[(Online KV)]
+  Stream --> Online
+  Registry[Feature Registry] --> Batch
+  Registry --> Stream
+  Serving[Model Serving] --> Online
+  Training --> Offline
+```
+
+While drawing say: “The same versioned transformation definition drives both paths where feasible.”
+
+**Board now:**
+- Dual stores
+- Shared registry
+
+### Beat 6 — Leakage
+
+**Interviewer:** How do you avoid training leakage?
+
+**You (ask / say / draw):** “Point-in-time joins select the latest feature event at or before each label timestamp.”
+
+**Interviewer:** Ingest time instead?
+
+**You:** “Use event time plus correction policy; record lineage for reproducibility.”
+
+**Board now:**
+- As-of join
+- Event-time lineage
+
+### Beat 7 — Serving failure
+
+**Interviewer:** Online store is down.
+
+**You (ask / say / draw):** “Per model, use bounded-stale local cache, safe defaults, or fail closed. Never hide freshness.”
+
+**Interviewer:** Wrong feature version?
+
+**You:** “Serving requests pin versions and reject incompatible schemas.”
+
+**Board now:**
+- Model-specific fallback
+- Version validation
+
+### Beat 8 — Close
+
+**You:** “Versioned definitions and point-in-time lineage protect training correctness; online KV serves low-latency values with explicit freshness and fallback. Drift checks compare offline and online samples.”
+
+**Board now:**
+- Training/serving invariant
+- Drift observability
+
+---
+
+## Reference cheat sheet — not the interview script
+
+Use this only after practicing the conversations. Do not recite it as an opening answer.
+
+### Cross-cutting correctness patterns
+
+- Scarce row: lock it or conditionally transition it.
+- Time-range inventory: lock deterministic buckets or enforce non-overlap.
+- Client retries: idempotency key plus unique constraint plus stored response.
+- External payment: provider idempotency, webhook, reconciliation, and refund path.
+- Cross-service publication: transactional outbox and idempotent consumers.
+- Temporary ownership: explicit hold ID, expiry, guarded release.
+- Worker ownership: lease plus fencing token.
+- Derived read model: may be stale; final command revalidates.
+- Deletion: tombstone first, invalidate projections, then physical cleanup.
+- Multi-region writes: choose a home owner unless conflict resolution is a product feature.
+
+### Quick consistency chooser
+
+- “Only one may win” → conditional update or row lock.
+- “Many rows must win together” → one transaction with deterministic lock order.
+- “It may be discovered stale” → cache/index is acceptable.
+- “It must not be committed stale” → authoritative revalidation.
+- “The remote side may have succeeded” → durable operation + reconciliation.
+- “The event may repeat” → consumer idempotency key or monotonic version.
+- “A dead worker may return” → fencing token.
+
+### Capacity prompts
+
+Write only arithmetic that changes a decision:
 
 ```text
-DAU = _
-Actions/user/day = _
-Daily requests = DAU × actions
-Avg QPS = daily / 86400
-Peak QPS ≈ avg × 3..10
-Storage/day = writes/day × bytes
+peak requests/s = daily requests × peak factor / 86,400
+daily bytes = events/s × bytes/event × 86,400
+concurrent sessions ≈ arrival rate × average duration
+cache bandwidth = hot reads/s × average response bytes
+partitions ≈ peak throughput / safe throughput per partition
 ```
 
-### Pastebin
+Useful questions:
 
-```text
-5e6 writes/day × 8KB = 40GB/day
-Reads 30× → ~1.7k avg QPS, design cache for 50k peak hot key
-```
+- Does one key become hot even when total QPS is modest?
+- Does retention force object storage or downsampling?
+- Does one tenant need dedicated capacity?
+- Does the partition key preserve the order actually required?
+- Does replication bandwidth exceed ingest bandwidth?
 
-### Metrics
+### Failure cuts to rehearse
 
-```text
-50k samples/sec avg → Kafka + TSDB; rollups mandatory
-```
+For every arrow, cover it and ask:
 
-### Rides (city)
+1. Did the caller receive an acknowledgment?
+2. What durable fact exists?
+3. Is retry safe?
+4. Can the old owner return later?
+5. Who reconciles ambiguity?
+6. What does the user see?
 
-```text
-5k drivers × 1 Hz location = 5k QPS → Redis GEO
-100 trips/sec peak → Postgres OK
-```
+Common cuts:
 
-### RAG
+- Process dies after DB commit but before response.
+- Queue redelivers after consumer commit.
+- Payment succeeds but local state does not.
+- Cache serves after deletion.
+- lease expires while old worker still runs.
+- Search index lags behind inventory.
+- Region fails during a write.
+- Poison message blocks a partition.
+- Clock skew makes a TTL appear early or late.
 
-```text
-10M docs × 20 chunks = 200M vectors
-64-byte dim compressed ~ … size vector DB; embed async
-Query QPS 50 p95 < 2s with ANN + cache
-```
+### Store selection reminders
 
----
+- Relational DB: transactional entities, constraints, range ownership.
+- Key-value store: low-latency point reads and ephemeral counters.
+- Search index: text, facets, geo candidates; usually derived.
+- Object store: large immutable bodies, chunks, cold data.
+- Time-series/columnar store: compressed scans and rollups.
+- Durable log: replayable fan-out and burst absorption.
+- Vector index: approximate semantic candidates, always policy-filtered.
 
-## 19. Failure Modes Catalog
+### API review
 
-| Failure | Detection | Mitigation |
-|---------|-----------|------------|
-| Payment OK, DB fail | webhook missing order | reconciler / outbox |
-| Kafka lag spike | consumer lag metric | autoscale; shed non-critical |
-| Cache stampede | origin QPS spike | singleflight + lock |
-| Primary DB down | health check | failover; degrade reads |
-| Duplicate POST | client retry | Idempotency-Key UNIQUE |
-| Poison message | retry count | DLQ + alert |
-| Hot partition | broker CPU | rehash key |
-| ACL bug in RAG | audit samples | deny-by-default tests |
+- Resource or command name is clear.
+- Authentication and tenant context are explicit.
+- Request has client/idempotency identity when retried.
+- Response distinguishes accepted, completed, conflict, invalid, and unavailable.
+- Pagination has a stable cursor.
+- Version or ETag protects concurrent updates.
+- Async operation exposes status or events.
+- Delete behavior and retention are stated.
 
-```mermaid
-flowchart TD
-  F[Failure] --> R{Retry safe?}
-  R -->|yes| B[Backoff + jitter]
-  R -->|no| C[Compensate / reconcile]
-  B --> D{Exhausted?}
-  D -->|yes| DLQ[DLQ + page]
-  D -->|no| B
-```
+### Interview rubric
 
----
+Score each area from 0–2:
 
-## 20. Practice Rubric & Mocks
+- Requirements: focused questions and explicit v1.
+- NFRs: numbers, challenge response, and consistency split.
+- Model/API: keys, states, constraints, retries.
+- Deep dive: exact invariant and credible race handling.
+- Scale/failure: bottleneck, failure cut, recovery, trade-off.
 
-### Rubric / 10
+Interpretation:
 
-| Pts | Bar |
-|----:|-----|
-| 2 | Clarifying Qs + numeric NFRs |
-| 2 | Diagram + ≥5 entities/classes |
-| 2 | APIs with example JSON |
-| 3 | Concurrency/failure sequence |
-| 1 | Scale phase + trade-off close |
+- 9–10: controlled, evidence-driven, and easy to redirect.
+- 7–8: strong, with one thin deep dive or failure story.
+- 5–6: plausible components but weak ownership or semantics.
+- Below 5: solution dump, unexplained boxes, or missing correctness.
 
-### Mock order (recommended)
+### Solo practice method
 
-1. Parking (LLD)  
-2. Car Rental (LLD)  
-3. Metrics (HLD)  
-4. Pastebin (HLD)  
-5. Elevator (OOD)  
-6. RAG (FDE story)  
-7. Rides  
-8. Dropbox  
+1. Cover everything after the next **Interviewer:** line.
+2. Answer aloud in under 45 seconds.
+3. Reveal the interviewer push.
+4. Add only what that push earns.
+5. Redraw the board from memory after the final beat.
+6. Repeat once with a different assumption.
 
-### Closing sentence bank
-
-* “Reads can be eventual; assignments cannot.”  
-* “Kafka protects storage from bursts.”  
-* “Cache is never the source of truth for inventory.”  
-* “Idempotency keys make mobile retries safe.”  
-* “I’d ship v1 correct, then shard by lot/location.”  
-
----
-
-### Whiteboard redraw kit
-
-```mermaid
-flowchart LR
-  B[API] --> DB[(Postgres locks)]
-  B --> R[(Redis TTL)]
-```
-
-```mermaid
-flowchart LR
-  G[Gateway] --> K[Kafka] --> T[(TSDB)]
-```
-
-```mermaid
-flowchart LR
-  L[LB] --> A[App] --> C[(Redis)]
-  A --> S3[(S3)]
-```
-
-```mermaid
-flowchart LR
-  T[Trip] --> G[(GEO)]
-  T --> P[(CAS trip row)]
-```
-
-```mermaid
-flowchart LR
-  Q[Query] --> ACL --> V[(Vector)] --> L[LLM+cites]
-```
-
----
-
-*Use this as a speaking script, not a memorized essay. Draw → narrate → deep-dive one invariant → stop.*
+The test is not whether your final board matches this file. The test is whether every box has a spoken reason and every hard promise has an owner.
