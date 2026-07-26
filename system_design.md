@@ -6,71 +6,213 @@ Do not memorize the final diagrams. Practice reaching them from requirements.
 
 ---
 
-## 0. Short interview framework
+## 0. The classic four-step interview framework
 
-### A 45-minute rhythm
+The four steps are the primary clock. The progressive dialogue in every later section is how you execute them: ask one question at a time, earn each box, pause for feedback, and deepen only after the interviewer buys into the direction.
 
-- 0–5: restate the problem; ask one or two clarifying questions at a time.
-- 5–9: propose measurable NFRs; let the interviewer challenge them.
-- 9–16: add the first entities and lifecycle states.
-- 16–23: define one API at a time, including retries and errors.
-- 23–34: follow the interviewer into the hardest invariant or hot path.
-- 34–41: respond to a scale or failure prompt.
-- 41–45: summarize truth, acceptable staleness, trade-offs, and next step.
+Figures are named so you can say “as in Figure F1.HLD” while practicing.
 
-### Clarifying bank
+**Figure F0.1 — Four-step interview timeline (Step 1–4)**
 
-Pick only the question that changes your next design choice.
+```mermaid
+flowchart LR
+  S1["Step 1: scope<br/>3–10 min"] --> S2["Step 2: HLD buy-in<br/>10–15 min"]
+  S2 --> S3["Step 3: deep dive<br/>10–25 min"]
+  S3 --> S4["Step 4: wrap up<br/>3–5 min"]
+  S1 -. "requirements and NFRs" .-> S2
+  S2 -. "agreed blueprint" .-> S3
+  S3 -. "risks and evidence" .-> S4
+```
 
-- Who acts: customer, operator, admin, device, or partner?
-- What is the smallest complete v1 journey?
-- What is explicitly out of scope?
-- What are peak QPS, read/write ratio, object size, and retention?
-- Is traffic smooth, viral, event-driven, or reconnect-heavy?
-- Which action cannot be stale?
-- May discovery lag while the final command revalidates?
-- Are client retries expected?
-- Is this single-region, multi-region, or tenant-isolated?
-- What audit, privacy, or deletion obligations matter?
+While drawing say: “I’ll first agree on scope, then propose a blueprint, deepen the most important component, and reserve time to close.”
 
-### What the interviewer scores
+### Step 1 — Understand the problem and establish design scope (3–10 min)
 
-- You control ambiguity without interrogating the interviewer.
-- Requirements cause design decisions.
-- Entities have keys, states, ownership, and constraints.
-- APIs have retry semantics, status codes, and pagination where needed.
-- You identify the exact correctness boundary.
-- You distinguish authoritative state from derived acceleration.
-- You recover cleanly from a wrong turn or silence.
-- You explain failure behavior and one credible scale path.
+Ask clarifying questions; do not silently assume. Establish functional requirements, constraints, success metrics, and what is explicitly out of scope. Pick questions that change the next design decision rather than reading a checklist.
 
-### Recovery phrases
+#### Clarifying question bank
+
+- **Users and actors:** Who acts—customer, operator, admin, device, or partner? Who reads, writes, and administers?
+- **Core journey:** What is the smallest complete v1 journey? Which use cases are must-have versus nice-to-have?
+- **Object and lifecycle:** What is created, read, updated, deleted, reserved, or streamed? What states matter?
+- **Scale:** What are DAU/MAU, peak QPS, read/write ratio, object size, fanout, retention, and growth?
+- **Traffic shape:** Is traffic smooth, viral, bursty, event-driven, regional, or reconnect-heavy?
+- **Correctness:** Which action cannot be stale? Can discovery lag if the final command revalidates?
+- **Reliability:** Are retries expected? What loss, duplication, RPO, RTO, and degraded behavior are acceptable?
+- **Geography and tenancy:** Single region, multi-region, tenant-isolated, edge-heavy, or data-residency constrained?
+- **Security and compliance:** What auth, audit, privacy, encryption, moderation, legal hold, or deletion duties matter?
+- **Boundaries:** What integrations exist? What is explicitly out of scope for this interview?
+
+#### NFR template
+
+State measurable targets and invite correction:
+
+> “I propose peak ___ reads/s and ___ writes/s; p95 ___ ms for ___; ___% availability; data durable after ___; consistency is ___ for ___ and eventual within ___ for ___; retain ___ for ___; support ___ regions/tenants; and enforce ___ security/compliance controls. Which target should we revise?”
+
+Capture assumptions, not fake precision. A useful board has six lanes: scale, latency, availability, durability, consistency/freshness, and security/compliance.
+
+**Draw now:** turn the prompt into a shared scope board.
+
+**Figure F0.2 — Scope board and requirement boundary (Step 1)**
+
+```mermaid
+flowchart TB
+  Prompt[Problem prompt] --> Actors[Actors]
+  Prompt --> Journeys["Must-have journeys"]
+  Prompt --> NFR["Measurable NFRs"]
+  Prompt --> Constraints[Constraints]
+  Prompt --> Out["Out of scope"]
+  Actors --> Scope["Agreed v1 scope"]
+  Journeys --> Scope
+  NFR --> Scope
+  Constraints --> Scope
+  Out -. "boundary" .-> Scope
+  Scope --> Unknowns["Open questions and assumptions"]
+```
+
+Getting buy-in sounds like: “I’ll design for these two journeys and these targets, defer these items, and call out assumptions as we go. Does this scope match what you want?”
+
+### Step 2 — Propose a high-level design and get buy-in (10–15 min)
+
+Offer an initial blueprint, not a finished answer. Treat the interviewer as a teammate: explain why each box exists, ask for feedback, and show multiple credible approaches when the trade-off is material.
+
+- Draw clients, edge/CDN, load balancer or API gateway, web/application services, cache, authoritative stores, message queues, workers, and external dependencies.
+- Separate synchronous user paths from asynchronous work and identify the source of truth.
+- Do back-of-the-envelope calculations when they affect partitioning, bandwidth, storage, cache size, or queue capacity; ask whether the interviewer wants the arithmetic.
+- Walk one concrete happy-path use case end to end, then one edge case such as a retry, duplicate, hot key, or dependency timeout.
+- State alternatives briefly: “Option A favors ___; option B favors ___. Given our requirements I recommend A.”
+- Pause before deepening: “Is this the right high-level shape, and which component would you like me to explore?”
+
+**Figure F0.3 — Generic high-level design template (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Web, mobile, device"] --> Edge["DNS, CDN, WAF"]
+  Edge --> GW["Load balancer and API gateway"]
+  GW --> API["Stateless API services"]
+  API --> Cache[(Cache)]
+  API --> DB[("Authoritative DB")]
+  API --> Blob[("Object or search store")]
+  DB --> Outbox[Transactional outbox]
+  Outbox --> Q[[Message queue]]
+  Q --> Worker[Async workers]
+  Worker --> DB
+  Worker --> Ext["External dependencies"]
+  API --> Obs["Logs, metrics, traces"]
+  Worker --> Obs
+```
+
+Getting buy-in is an explicit checkpoint, not a courtesy: summarize the main trade-off, ask whether the interviewer agrees, and use their feedback to choose the Step-3 target.
+
+### Step 3 — Design deep dive (10–25 min)
+
+The goals and HLD are already agreed. Use feedback to prioritize one or two critical components: the scarce-resource write, fanout path, scheduler, storage layout, authorization boundary, or hottest read.
+
+- Trace data and control flow inside the chosen service.
+- Define API contracts, idempotency, errors, state transitions, keys, indexes, and transactional boundaries.
+- Quantify bottlenecks or resource estimates when they change the design.
+- For a URL shortener, compare random codes, hashing, and ID-to-base62 generation; for chat, cover online/offline delivery and fanout; for booking, prove exclusive allocation.
+- Discuss concurrency, retries, partial failure, backpressure, recovery, observability, and tests around the invariant.
+- Keep time: do not disappear into classes, schema columns, or protocol trivia that does not defend a requirement.
+
+**Figure F0.4 — Generic service component deep dive (Step 3)**
+
+```mermaid
+flowchart LR
+  GW[API Gateway] --> Handler["Command and query handlers"]
+  Handler --> Auth[Auth and validation]
+  Auth --> Domain["Domain policy and state machine"]
+  Domain --> Repo[Repository]
+  Repo --> Cache[(Cache)]
+  Repo --> DB[("Primary DB")]
+  Domain --> Outbox[Outbox writer]
+  Outbox --> Relay[Outbox relay]
+  Relay --> Q[[Queue]]
+  Q --> Worker[Worker]
+  Worker --> Ext[External dependency]
+  Worker --> Repo
+```
+
+Time-box the dive by announcing the target: “I’ll spend the next ten minutes proving allocation correctness and retry behavior, then leave time for failure and scale.”
+
+### Step 4 — Wrap up (3–5 min)
+
+Never say the design is perfect. Name bottlenecks and improvements, recap the design and source of truth, cover errors and operations, and explain the next scale curve—often what changes from 1 million to 10 million users.
+
+- Recap requirements, core path, authoritative state, asynchronous projections, and the key trade-off.
+- Call out top bottlenecks, failure modes, and how you would measure them.
+- Cover error handling, dashboards, alerts, tracing, capacity signals, backup/restore, rollout, rollback, and migration.
+- Explain the next scale step: partitioning, regionalization, caching, load shedding, or isolation—and what complexity it buys.
+- Offer refinements if more time: deeper threat model, cost model, schema, test plan, disaster recovery, or alternative design.
+
+**Figure F0.5 — Wrap-up checklist and next scale curve (Step 4)**
+
+```mermaid
+flowchart LR
+  Recap["Recap scope and design"] --> Risks["Bottlenecks and errors"]
+  Risks --> Ops["Monitoring and operations"]
+  Ops --> Rollout["Rollout, rollback, migration"]
+  Rollout --> Scale["1M to 10M scale curve"]
+  Scale --> Next["Refinements with more time"]
+  Next -. "feedback" .-> Risks
+```
+
+#### Dos
+
+- Do drive the conversation and state the current step.
+- Do ask clarifying questions before drawing architecture.
+- Do make assumptions explicit and measurable.
+- Do distinguish functional requirements from NFRs and out-of-scope items.
+- Do calculate scale when it changes a decision.
+- Do start simple and add boxes only when a requirement earns them.
+- Do identify the source of truth, correctness boundary, and acceptable staleness.
+- Do walk concrete use cases, retries, edge cases, and failure cuts.
+- Do discuss trade-offs and, when useful, present more than one approach.
+- Do collaborate: pause, ask for feedback, and adapt to interviewer hints.
+- Do communicate while drawing; explain each component and arrow.
+- Do prioritize the critical path and manage time aloud.
+- Do reserve three to five minutes for recap, bottlenecks, operations, and scale.
+- Do admit and correct weak assumptions cleanly.
+
+#### Don'ts
+
+- Don’t jump into databases, microservices, or classes before agreeing on scope.
+- Don’t assume scale, consistency, geography, or product behavior without saying so.
+- Don’t interrogate with every possible question; ask what changes the design.
+- Don’t draw a giant architecture in silence.
+- Don’t list technologies without connecting them to requirements.
+- Don’t over-engineer v1 or add distributed complexity without a reason.
+- Don’t claim exactly-once delivery, zero downtime, or perfect consistency casually.
+- Don’t confuse cache, index, replica, or analytics projections with authoritative truth.
+- Don’t ignore idempotency, races, partial failures, hot keys, or backpressure.
+- Don’t spend the whole interview on one minute implementation detail.
+- Don’t dismiss interviewer feedback or defend a broken approach.
+- Don’t end without a summary, bottlenecks, monitoring, rollout, and next scale step.
+- Don’t say “the design is perfect.”
+
+#### 45-minute allocation
+
+| Time | Step | Outcome |
+|---|---|---|
+| 0–7 min | Step 1 — Scope | Requirements, NFRs, estimates, exclusions, agreement |
+| 7–19 min | Step 2 — HLD | Blueprint, core use case, alternatives, interviewer buy-in |
+| 19–39 min | Step 3 — Deep dive | Critical component, data model/API, invariant, failure behavior |
+| 39–45 min | Step 4 — Wrap | Recap, bottlenecks, operations, rollout, 10× scale |
+
+### Progressive-interview recovery phrases
 
 - **[If you blank]** “I’m stuck. What is the next user action after this?”
 - **[If you overdraw]** “Let me erase derived pieces and re-anchor on the source of truth.”
 - **[If challenged]** “That assumption is weak. I’ll revise it and state what changes.”
 - **[If time is short]** “I’ll prioritize the critical write, its invariant, and its failure recovery.”
 
-**Draw now:** only the conversation path, not an architecture.
-
-```mermaid
-flowchart LR
-  P[Prompt] --> C[Clarify]
-  C --> N[NFRs]
-  N --> M[Model]
-  M --> A[One API]
-  A --> I[Invariant]
-  I --> F[Failure]
-  F --> S[Scale]
-```
-
-While drawing say: “I will earn each design layer in this order and pause for redirection.”
-
 ---
 
 ## 1. Parking Lot — full progressive interview
 
 ### Beat 1 — Restate without designing
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design a parking lot.
 
@@ -99,6 +241,8 @@ While drawing say: “I will earn each design layer in this order and pause for 
 - Critical path: entry → park → exit
 
 **Draw now:** the actors and driver journey.
+
+**Figure F1.01 — The actors and driver journey (Step 1)**
 
 ```mermaid
 flowchart LR
@@ -177,6 +321,8 @@ While drawing say: “The driver owns the critical journey; operator configurati
 
 **Draw now:** the NFR board and consistency boundary.
 
+**Figure F1.02 — The NFR board and consistency boundary (Step 1)**
+
 ```mermaid
 flowchart LR
   Gate[Entry request] --> Claim[Authoritative spot claim]
@@ -203,6 +349,8 @@ While drawing say: “Latency cannot weaken the one-spot claim; only the derived
 
 ### Beat 9 — Start with two entities
 
+*(Step 3 — Deep dive)*
+
 **Interviewer:** Model it.
 
 **You (ask / say / draw):** “I’d start with `Lot` and `Spot`. `Spot(spot_id, lot_id, level, type, status, version)` belongs to one lot.”
@@ -216,6 +364,8 @@ While drawing say: “Latency cannot weaken the one-spot claim; only the derived
 - Spot has type, location, status, version
 
 **Draw now:** the first partial parking ERD.
+
+**Figure F1.03 — The first partial parking ERD (Step 3)**
 
 ```mermaid
 erDiagram
@@ -265,6 +415,8 @@ While drawing say: “This is intentionally incomplete: Spot is already the lock
 
 **Draw now:** the evolving ERD after adding the stay lifecycle.
 
+**Figure F1.04 — The evolving ERD after adding the stay lifecycle (Step 3)**
+
 ```mermaid
 erDiagram
   LOT ||--o{ SPOT : contains
@@ -306,6 +458,8 @@ While drawing say: “Session is historical truth, while Spot remains the curren
 **You (ask / say / draw):** “Now we have enough nouns to draw the core, but not payment yet.”
 
 **Draw now:** the minimum parking model.
+
+**Figure F1.05 — The minimum parking model (Step 3)**
 
 ```mermaid
 erDiagram
@@ -350,6 +504,8 @@ While drawing say: “The mutable scarcity boundary is one Spot; Session preserv
 
 **Draw now:** the compatibility ranking decision.
 
+**Figure F1.06 — The compatibility ranking decision (Step 3)**
+
 ```mermaid
 flowchart TD
   Vehicle[Vehicle type] --> Policy[Compatibility rows]
@@ -383,6 +539,8 @@ While drawing say: “Ranking preserves flexible inventory, but the final row lo
 
 **Draw now:** the entry API sequence.
 
+**Figure F1.07 — The entry API sequence (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant G as Entry Gate
@@ -412,6 +570,8 @@ While drawing say: “The response is produced by the same transaction that spen
 - Replay or 202 while in progress
 
 **Draw now:** the gate timeout and retry sequence.
+
+**Figure F1.08 — The gate timeout and retry sequence (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -459,6 +619,8 @@ While drawing say: “A retry observes the first operation; it never starts a se
 
 **Draw now:** the payment entities added to the parking model.
 
+**Figure F1.09 — The payment entities added to the parking model (Step 3)**
+
 ```mermaid
 erDiagram
   PARKING_SESSION ||--o{ PAYMENT_ATTEMPT : charges
@@ -502,6 +664,8 @@ While drawing say: “Immutable rate versions reproduce the quote, and each prov
 **Interviewer:** Show the race.
 
 **Draw now:** the last-spot sequence.
+
+**Figure F1.10 — The last-spot sequence (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -557,6 +721,8 @@ While drawing say: “The loser does not trust its old read; it performs a fresh
 
 **Draw now:** payment crash recovery with an outbox.
 
+**Figure F1.11 — Payment crash recovery with an outbox (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant S as Session Service
@@ -577,6 +743,8 @@ While drawing say: “Provider idempotency prevents double charge, while webhook
 ### Beat 23 — Draw the state machine
 
 **Draw now:** session and payment-aware transitions.
+
+**Figure F1.12 — Session and payment-aware transitions (Step 3)**
 
 ```mermaid
 stateDiagram-v2
@@ -600,6 +768,8 @@ While drawing say: “Only conditional transitions are legal; stale commands rec
 - Sensors do not silently rewrite truth
 
 **Draw now:** the expiry and reconciliation worker boundary.
+
+**Figure F1.13 — The expiry and reconciliation worker boundary (Step 3)**
 
 ```mermaid
 flowchart LR
@@ -630,6 +800,8 @@ While drawing say: “Drive-up sessions do not expire; only stale operations and
 
 **Draw now:** lot-based sharding at scale.
 
+**Figure F1.14 — Lot-based sharding at scale (Step 2)**
+
 ```mermaid
 flowchart LR
   Router[Lot-aware router] --> S1[Lot shard A]
@@ -645,11 +817,61 @@ flowchart LR
 
 While drawing say: “Every garage has one write home, while global views are derived from shard events.”
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F1.HLD — Parking Lot high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Gate, kiosk, operator UI"] --> Edge["LB and API gateway"]
+  Edge --> Service["Parking Session Service"]
+  Service --> Cache[("candidate spot cache")]
+  Service --> DB[("lot-partitioned SQL DB")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["parking events"]]
+  Queue --> Worker["signage, billing, audit workers"]
+  Worker --> DB
+  Worker --> External["payment and gate devices"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F1.LLD — Spot-claim service internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["entry command handler"] --> DomainA["compatibility ranker"]
+  DomainA --> DomainB["atomic spot claim policy"]
+  DomainB --> Repo["spot and session repository"]
+  Repo --> Cache[("candidate spot cache")]
+  Repo --> DB[("lot-partitioned SQL DB")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["parking events"]]
+  Queue --> Worker["signage, billing, audit workers"]
+  Worker --> External["payment and gate devices"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 25 — Earn the final architecture and close
+
+*(Step 4 — Wrap up)*
 
 **Interviewer:** Draw the scaled system and summarize.
 
 **Draw now:** only boxes justified by prior beats.
+
+**Figure F1.15 — Only boxes justified by prior beats (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -682,6 +904,8 @@ While drawing say: “Postgres owns spot and session state; projections may lag;
 
 ### Beat 1 — Frame the product
 
+*(Step 1 — Scope)*
+
 **Interviewer:** Design an enterprise car-rental system.
 
 **You (ask / say / draw):** “I’ll begin with search, reserve, pickup, and return. Is this exact-vehicle booking or vehicle-class booking?”
@@ -695,6 +919,8 @@ While drawing say: “Postgres owns spot and session state; projections may lag;
 - Reservation targets class, not VIN
 
 **Draw now:** the customer journey and promise boundary.
+
+**Figure F2.01 — The customer journey and promise boundary (Step 1)**
 
 ```mermaid
 flowchart LR
@@ -758,6 +984,8 @@ While drawing say: “The reservation promises a class first; a VIN enters only 
 
 **Draw now:** the car-rental NFR split.
 
+**Figure F2.02 — The car-rental NFR split (Step 1)**
+
 ```mermaid
 flowchart LR
   Client --> Search[Search path]
@@ -783,6 +1011,8 @@ While drawing say: “Search optimizes discovery, but only booking can spend inv
 - 50 booking QPS
 
 ### Beat 7 — Begin entities
+
+*(Step 3 — Deep dive)*
 
 **Interviewer:** Model the fleet.
 
@@ -822,6 +1052,8 @@ While drawing say: “Search optimizes discovery, but only booking can spend inv
 
 **Draw now:** the inventory-model correction.
 
+**Figure F2.03 — The inventory-model correction (Step 3)**
+
 ```mermaid
 flowchart LR
   Request[Date-range request] --> Old[Count fleet minus overlaps]
@@ -836,6 +1068,8 @@ While drawing say: “Daily buckets turn an expensive overlap calculation into f
 ### Beat 10 — Draw the model
 
 **Draw now:** reservation promise versus physical allocation.
+
+**Figure F2.04 — Reservation promise versus physical allocation (Step 3)**
 
 ```mermaid
 erDiagram
@@ -892,6 +1126,8 @@ While drawing say: “InventoryDay protects promises; Vehicle represents operati
 
 **Draw now:** the booking API decision path.
 
+**Figure F2.05 — The booking API decision path (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant C as Customer
@@ -922,6 +1158,8 @@ While drawing say: “A valid quote freezes price inputs, not availability; inve
 - All-or-nothing increment
 
 ### Beat 14 — Draw booking sequence
+
+**Figure F2.06 — Draw booking sequence (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -991,6 +1229,8 @@ While drawing say: “Search is advisory; only this transaction spends inventory
 
 **Draw now:** pickup payment crash recovery.
 
+**Figure F2.07 — Pickup payment crash recovery (Step 3)**
+
 ```mermaid
 stateDiagram-v2
   [*] --> RESERVED
@@ -1020,6 +1260,8 @@ While drawing say: “The durable pickup operation makes ambiguous payment a res
 
 **Draw now:** regional search scaling without weakening booking.
 
+**Figure F2.08 — Regional search scaling without weakening booking (Step 3)**
+
 ```mermaid
 flowchart LR
   Events[Inventory events] --> R1[Region A index]
@@ -1034,6 +1276,10 @@ flowchart LR
 While drawing say: “Indexes scale independently by region, while every confirmation returns to the inventory home shard.”
 
 ### Beat 19 — Draw earned architecture
+
+*(Step 2 — HLD buy-in)*
+
+**Figure F2.09 — Draw earned architecture (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -1056,7 +1302,55 @@ While drawing say: “The index answers discovery; InventoryDay spends promises;
 - Read and write paths separated
 - Shared event-driven projections
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F2.HLD — Car Rental high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Web, mobile, agent UI"] --> Edge["LB and API gateway"]
+  Edge --> Service["Reservation and Fleet Services"]
+  Service --> Cache[("availability cache")]
+  Service --> DB[("inventory and reservation DB")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["fleet events"]]
+  Queue --> Worker["index and operations workers"]
+  Worker --> DB
+  Worker --> External["payment and identity providers"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F2.LLD — Reservation allocation internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["reserve command handler"] --> DomainA["rate and policy engine"]
+  DomainA --> DomainB["inventory-day locker"]
+  DomainB --> Repo["reservation repository"]
+  Repo --> Cache[("availability cache")]
+  Repo --> DB[("inventory and reservation DB")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["fleet events"]]
+  Queue --> Worker["index and operations workers"]
+  Worker --> External["payment and identity providers"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 20 — Close
+
+*(Step 4 — Wrap up)*
 
 **Interviewer:** Summarize your trade-off.
 
@@ -1074,6 +1368,8 @@ While drawing say: “The index answers discovery; InventoryDay spends promises;
 
 ### Beat 1 — Clarify the product
 
+*(Step 1 — Scope)*
+
 **Interviewer:** Design a metrics platform.
 
 **You (ask / say / draw):** “Is the primary use case real-time dashboards, alerting, long-term analytics, or all three?”
@@ -1087,6 +1383,8 @@ While drawing say: “The index answers discovery; InventoryDay spends promises;
 - 13-month aggregate retention
 
 **Draw now:** the metrics actors and data journey.
+
+**Figure F3.01 — The metrics actors and data journey (Step 1)**
 
 ```mermaid
 flowchart LR
@@ -1151,6 +1449,8 @@ While drawing say: “Agents produce, dashboards query, and alerting consumes th
 
 **Draw now:** the metrics NFR lanes.
 
+**Figure F3.02 — The metrics NFR lanes (Step 1)**
+
 ```mermaid
 flowchart LR
   Batch[Accepted batch] --> Durable["ACK under 250 ms"]
@@ -1204,6 +1504,8 @@ While drawing say: “The durable append is shared, but alerting and dashboard f
 
 **Draw now:** the ingest API acknowledgment sequence.
 
+**Figure F3.03 — The ingest API acknowledgment sequence (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant A as Agent
@@ -1236,7 +1538,11 @@ While drawing say: “The client hears success only after a replayable record ex
 
 ### Beat 10 — Earn the ingest path
 
+*(Step 2 — HLD buy-in)*
+
 **Draw now:** synchronous acknowledgment and asynchronous processing.
+
+**Figure F3.04 — Synchronous acknowledgment and asynchronous processing (Step 3)**
 
 ```mermaid
 flowchart LR
@@ -1287,6 +1593,8 @@ While drawing say: “The log is the replay boundary; consumers can fail indepen
 
 **Draw now:** late-data window correction.
 
+**Figure F3.05 — Late-data window correction (Step 3)**
+
 ```mermaid
 flowchart LR
   Point[Late point] --> Window{"Within lateness policy"}
@@ -1300,6 +1608,8 @@ flowchart LR
 While drawing say: “Event-time correctness is bounded explicitly; very late points remain auditable without rewriting alerts.”
 
 ### Beat 13 — Aggregation model
+
+*(Step 3 — Deep dive)*
 
 **Interviewer:** What do you store?
 
@@ -1330,6 +1640,8 @@ While drawing say: “Event-time correctness is bounded explicitly; very late po
 ### Beat 15 — Query execution
 
 **Draw now:** query fan-out.
+
+**Figure F3.06 — Query fan-out (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -1366,6 +1678,8 @@ While drawing say: “Metadata expansion is bounded; workers enforce time and sa
 - Relational metadata only
 
 **Draw now:** the corrected storage tiers.
+
+**Figure F3.07 — The corrected storage tiers (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -1422,7 +1736,57 @@ While drawing say: “Relational storage catalogs series; compressed columnar ch
 - Agent buffering and regional failover
 - Explicit freshness/RPO
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F3.HLD — Metrics high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Agent["SDKs and agents"] --> Ingress["Regional ingest LB"]
+  Ingress --> Ingest["Ingest Service"]
+  Ingest --> Log[["Durable partitioned log"]]
+  Log --> Agg["Aggregation workers"]
+  Agg --> Hot[("Hot time-series store")]
+  Agg --> Cold[("Object archive")]
+  Dashboard["Dashboards and alerts"] --> QGW["Query gateway"]
+  QGW --> Query["Query Service"]
+  Query --> Cache[("Query cache")]
+  Query --> Hot
+  Query --> Cold
+  Hot --> Alert["Alert evaluator"]
+  Alert --> Provider["Notification provider"]
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F3.LLD — Ingest and query engine internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["batch and query handlers"] --> DomainA["tenant quota and query planner"]
+  DomainA --> DomainB["watermark aggregation engine"]
+  DomainB --> Repo["sample and rollup repositories"]
+  Repo --> Cache[("query cache")]
+  Repo --> DB[("time-series and metadata stores")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["metric partitions"]]
+  Queue --> Worker["aggregation and alert workers"]
+  Worker --> External["notification providers"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 20 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “The critical promise is no loss after durable acknowledgment, not exactly-once transport. Series-keyed partitions preserve useful order; watermark corrections handle lateness; cardinality and query budgets protect the platform.”
 
@@ -1438,6 +1802,8 @@ While drawing say: “Relational storage catalogs series; compressed columnar ch
 
 ### Beat 1 — Clarify the object
 
+*(Step 1 — Scope)*
+
 **Interviewer:** Design Pastebin.
 
 **You (ask / say / draw):** “Is v1 create-and-read immutable text, or do users edit documents?”
@@ -1451,6 +1817,8 @@ While drawing say: “Relational storage catalogs series; compressed columnar ch
 - Optional expiry
 
 **Draw now:** the initial paste lifecycle.
+
+**Figure F4.01 — The initial paste lifecycle (Step 3)**
 
 ```mermaid
 flowchart LR
@@ -1514,6 +1882,8 @@ While drawing say: “The object is immutable after publication; only lifecycle 
 
 **Draw now:** the Pastebin NFR board.
 
+**Figure F4.02 — The Pastebin NFR board (Step 1)**
+
 ```mermaid
 flowchart LR
   Create --> Durable[Durable acknowledged write]
@@ -1539,6 +1909,8 @@ While drawing say: “Read availability is aggressive, while deletion has an exp
 
 ### Beat 7 — Begin model
 
+*(Step 3 — Deep dive)*
+
 **Interviewer:** What entities?
 
 **You (ask / say / draw):** “Start with `Paste(id, owner_id?, object_key, visibility, created_at, expires_at, status, content_hash)`.”
@@ -1552,6 +1924,8 @@ While drawing say: “Read availability is aggressive, while deletion has an exp
 - Body object separated
 
 **Draw now:** the partial metadata and body model.
+
+**Figure F4.03 — The partial metadata and body model (Step 3)**
 
 ```mermaid
 erDiagram
@@ -1613,6 +1987,8 @@ While drawing say: “Metadata decides visibility and lifecycle; object storage 
 
 **Draw now:** the corrected publish states.
 
+**Figure F4.04 — The corrected publish states (Step 3)**
+
 ```mermaid
 stateDiagram-v2
   [*] --> UPLOADING
@@ -1626,6 +2002,8 @@ stateDiagram-v2
 While drawing say: “LIVE is reached only after durable bytes are verified, so readers never follow a broken pointer.”
 
 ### Beat 11 — Draw the write path
+
+**Figure F4.05 — Draw the write path (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -1663,6 +2041,10 @@ While drawing say: “A sweeper removes temporary objects that never gained comm
 
 ### Beat 13 — Earn read architecture
 
+*(Step 2 — HLD buy-in)*
+
+**Figure F4.06 — Earn read architecture (Step 2)**
+
 ```mermaid
 flowchart LR
   Reader[Reader] --> CDN[CDN]
@@ -1697,6 +2079,8 @@ While drawing say: “Metadata decides authorization and liveness; the CDN serve
 - Origin shield
 
 ### Beat 15 — Draw stampede control
+
+**Figure F4.07 — Draw stampede control (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -1733,6 +2117,8 @@ While drawing say: “The lock is short and local to a cache miss; it never beco
 - Async physical deletion
 
 **Draw now:** logical expiry and physical cleanup.
+
+**Figure F4.08 — Logical expiry and physical cleanup (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -1791,7 +2177,55 @@ While drawing say: “Read-time expiry provides correctness; the worker controls
 - Tombstone first
 - Measured purge propagation
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F4.HLD — Pastebin high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Browser and API clients"] --> Edge["LB and API gateway"]
+  Edge --> Service["Paste API Service"]
+  Service --> Cache[("paste and body cache")]
+  Service --> DB[("metadata DB and object store")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["paste events"]]
+  Queue --> Worker["expiry and abuse workers"]
+  Worker --> DB
+  Worker --> External["moderation provider"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F4.LLD — Paste publish internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["create and read handlers"] --> DomainA["ID and publish state machine"]
+  DomainA --> DomainB["expiry and tombstone policy"]
+  DomainB --> Repo["metadata and object repositories"]
+  Repo --> Cache[("paste and body cache")]
+  Repo --> DB[("metadata DB and object store")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["paste events"]]
+  Queue --> Worker["expiry and abuse workers"]
+  Worker --> External["moderation provider"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 20 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Immutable bodies make aggressive caching safe. Metadata is authoritative for visibility and lifecycle; publish ordering avoids broken reads; coalescing and shields absorb virality; deletion uses tombstones plus bounded invalidation.”
 
@@ -1807,6 +2241,8 @@ While drawing say: “Read-time expiry provides correctness; the worker controls
 
 ### Beat 1 — Clarify the boundary
 
+*(Step 1 — Scope)*
+
 **Interviewer:** Design an elevator system.
 
 **You (ask / say / draw):** “Should I model dispatch software and car state, while treating motor and safety PLCs as hardware interfaces?”
@@ -1820,6 +2256,8 @@ While drawing say: “Read-time expiry provides correctness; the worker controls
 - Out: physical safety implementation
 
 **Draw now:** the elevator actors and control boundary.
+
+**Figure F5.01 — The elevator actors and control boundary (Step 1)**
 
 ```mermaid
 flowchart LR
@@ -1886,6 +2324,8 @@ While drawing say: “Software chooses assignments and commands, but hardware in
 
 **Draw now:** the elevator NFR trade-off board.
 
+**Figure F5.02 — The elevator NFR trade-off board (Step 1)**
+
 ```mermaid
 flowchart LR
   Request --> React["Command reaction under 100 ms"]
@@ -1939,6 +2379,10 @@ While drawing say: “Safety is a hard guard; dispatch balances tail wait agains
 - Simulation-friendly core
 
 ### Beat 9 — Draw the class model
+
+*(Step 3 — Deep dive)*
+
+**Figure F5.03 — Draw the class model (Step 3)**
 
 ```mermaid
 classDiagram
@@ -2003,6 +2447,8 @@ While drawing say: “Assignment and execution are separate ownership boundaries
 
 **Draw now:** the ownership correction.
 
+**Figure F5.04 — The ownership correction (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant D as Dispatcher
@@ -2047,6 +2493,8 @@ While drawing say: “Dispatcher proposes work, while each car is the single wri
 
 ### Beat 14 — State machine
 
+**Figure F5.05 — State machine (Step 3)**
+
 ```mermaid
 stateDiagram-v2
   [*] --> IDLE
@@ -2087,6 +2535,8 @@ While drawing say: “Movement requires closed doors and a positive safety inter
 
 ### Beat 16 — Draw runtime interaction
 
+**Figure F5.06 — Draw runtime interaction (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant B as Hall Button
@@ -2123,6 +2573,8 @@ While drawing say: “Each car processes commands sequentially; hardware reports
 - Safe request reassignment
 
 **Draw now:** car-failure recovery.
+
+**Figure F5.07 — Car-failure recovery (Step 3)**
 
 ```mermaid
 flowchart TD
@@ -2165,7 +2617,55 @@ While drawing say: “Only hall calls are automatically reassigned; passenger sa
 - Deterministic simulator
 - Safety/liveness properties
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F5.HLD — Elevator high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Hall panels, car panels, operator"] --> Edge["LB and API gateway"]
+  Edge --> Service["Dispatcher Control Plane"]
+  Service --> Cache[("live car-state cache")]
+  Service --> DB[("request and car-state store")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["per-car commands"]]
+  Queue --> Worker["safety and replay workers"]
+  Worker --> DB
+  Worker --> External["motor, brake, door ports"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F5.LLD — Car-controller modules and state (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["command inbox and sensor adapter"] --> DomainA["mode and safety arbiter"]
+  DomainA --> DomainB["car state machine and stop planner"]
+  DomainB --> Repo["hardware command ports"]
+  Repo --> Cache[("live car-state cache")]
+  Repo --> DB[("request and car-state store")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["per-car commands"]]
+  Queue --> Worker["safety and replay workers"]
+  Worker --> External["motor, brake, door ports"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 20 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Dispatcher owns hall-call assignment; each car actor owns its state and stop plan. LOOK provides stable movement, modes override normal policy, and hardware interlocks remain authoritative for safety.”
 
@@ -2180,6 +2680,8 @@ While drawing say: “Only hall calls are automatically reassigned; passenger sa
 ## 6. Ticket / Event Booking — condensed progressive interview
 
 ### Beat 1 — Clarify inventory
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design ticket booking.
 
@@ -2219,6 +2721,8 @@ While drawing say: “Only hall calls are automatically reassigned; passenger sa
 
 **Draw now:** ticketing discovery versus allocation.
 
+**Figure F6.01 — Ticketing discovery versus allocation (Step 3)**
+
 ```mermaid
 flowchart LR
   Fan --> Browse[Cached seat map]
@@ -2231,6 +2735,8 @@ flowchart LR
 While drawing say: “Seat maps may lag, but hold creation always claims authoritative event-scoped inventory.”
 
 ### Beat 4 — Model gradually
+
+*(Step 3 — Deep dive)*
 
 **You (ask / say / draw):** “Start Event and Seat, then `EventSeat(event_id, seat_id, status, hold_id, hold_expires, version)`.”
 
@@ -2272,6 +2778,8 @@ While drawing say: “Seat maps may lag, but hold creation always claims authori
 
 ### Beat 7 — Draw lifecycle
 
+**Figure F6.02 — Draw lifecycle (Step 3)**
+
 ```mermaid
 stateDiagram-v2
   [*] --> AVAILABLE
@@ -2302,6 +2810,8 @@ While drawing say: “Expiry is a legal transition guarded by hold ID and versio
 - Reconciled settlement
 
 **Draw now:** ticket payment crash recovery.
+
+**Figure F6.03 — Ticket payment crash recovery (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -2334,6 +2844,10 @@ While drawing say: “Payment pending protects the seat while settlement truth i
 
 ### Beat 10 — Draw earned architecture
 
+*(Step 2 — HLD buy-in)*
+
+**Figure F6.04 — Draw earned architecture (Step 2)**
+
 ```mermaid
 flowchart LR
   Fan[Fans] --> Wait[Waiting Room]
@@ -2363,7 +2877,55 @@ While drawing say: “The waiting room shapes load; it does not allocate seats.�
 - Corrected DB-native claim
 - Fewer split-brain states
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F6.HLD — Tickets high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Web and mobile clients"] --> Edge["LB and API gateway"]
+  Edge --> Service["Catalog and Hold Services"]
+  Service --> Cache[("event cache")]
+  Service --> DB[("seat inventory and order DB")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["order events"]]
+  Queue --> Worker["expiry and fulfillment workers"]
+  Worker --> DB
+  Worker --> External["payment and ticket providers"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F6.LLD — Seat-hold allocation internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["create hold handler"] --> DomainA["eligibility and limit policy"]
+  DomainA --> DomainB["atomic seat allocator"]
+  DomainB --> Repo["hold and order repository"]
+  Repo --> Cache[("event cache")]
+  Repo --> DB[("seat inventory and order DB")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["order events"]]
+  Queue --> Worker["expiry and fulfillment workers"]
+  Worker --> External["payment and ticket providers"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 12 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “The invariant is one terminal sale per EventSeat. Holds are short, idempotent claims; payment ambiguity is reconciled; a waiting room protects hot events without becoming inventory truth.”
 
@@ -2376,6 +2938,8 @@ While drawing say: “The waiting room shapes load; it does not allocate seats.�
 ## 7. Ride-Sharing — condensed progressive interview
 
 ### Beat 1 — Scope
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design ride-sharing.
 
@@ -2415,6 +2979,8 @@ While drawing say: “The waiting room shapes load; it does not allocate seats.�
 
 **Draw now:** ride-sharing state separation.
 
+**Figure F7.01 — Ride-sharing state separation (Step 3)**
+
 ```mermaid
 flowchart LR
   DriverApp --> Location[Ephemeral location]
@@ -2428,6 +2994,8 @@ flowchart LR
 While drawing say: “Location proposes candidates; durable driver state enforces exclusivity.”
 
 ### Beat 4 — Entities
+
+*(Step 3 — Deep dive)*
 
 **You (ask / say / draw):** “Start Rider, Driver, Vehicle, and Trip with REQUESTED, MATCHING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED.”
 
@@ -2481,6 +3049,8 @@ While drawing say: “Location proposes candidates; durable driver state enforce
 
 ### Beat 8 — Draw match sequence
 
+**Figure F7.02 — Draw match sequence (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant R as Rider
@@ -2502,6 +3072,10 @@ While drawing say: “Geo search proposes; durable driver state disposes.”
 - Authoritative claim
 
 ### Beat 9 — Architecture
+
+*(Step 2 — HLD buy-in)*
+
+**Figure F7.03 — Architecture (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -2539,6 +3113,8 @@ While drawing say: “Realtime delivery may retry; trip transitions are idempote
 
 **Draw now:** assignment loss and recovery.
 
+**Figure F7.04 — Assignment loss and recovery (Step 3)**
+
 ```mermaid
 stateDiagram-v2
   [*] --> ASSIGNED
@@ -2565,7 +3141,55 @@ While drawing say: “A grace state avoids creating two drivers for one rider du
 - City/region ownership
 - Hot-cell splitting
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F7.HLD — Rides high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Rider and driver apps"] --> Edge["LB and API gateway"]
+  Edge --> Service["Trip and Location Services"]
+  Service --> Cache[("nearby-driver geo cache")]
+  Service --> DB[("trip and driver-state DB")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["trip events"]]
+  Queue --> Worker["matching and notification workers"]
+  Worker --> DB
+  Worker --> External["maps and pricing providers"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F7.LLD — Matching and assignment internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["ride request handler"] --> DomainA["geo candidate and ETA scorer"]
+  DomainA --> DomainB["offer and lease coordinator"]
+  DomainB --> Repo["exclusive assignment repository"]
+  Repo --> Cache[("nearby-driver geo cache")]
+  Repo --> DB[("trip and driver-state DB")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["trip events"]]
+  Queue --> Worker["matching and notification workers"]
+  Worker --> External["maps and pricing providers"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 12 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Location is a stale candidate projection; Driver and Trip state enforce exclusivity. Matching is asynchronous and retryable, with conditional claims and ownership-safe expiry.”
 
@@ -2578,6 +3202,8 @@ While drawing say: “A grace state avoids creating two drivers for one rider du
 ## 8. Dropbox-like File Storage — condensed progressive interview
 
 ### Beat 1 — Scope
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design Dropbox.
 
@@ -2617,6 +3243,8 @@ While drawing say: “A grace state avoids creating two drivers for one rider du
 
 **Draw now:** Dropbox metadata and content ownership.
 
+**Figure F8.01 — Dropbox metadata and content ownership (Step 3)**
+
 ```mermaid
 flowchart LR
   Namespace[Namespace entry] --> Version[Current file version]
@@ -2630,6 +3258,8 @@ flowchart LR
 While drawing say: “Namespace mutations move pointers; immutable file versions and chunks preserve content history.”
 
 ### Beat 4 — Entities
+
+*(Step 3 — Deep dive)*
 
 **You (ask / say / draw):** “Start User, NamespaceEntry, FileVersion, and Chunk; an entry points to current version.”
 
@@ -2669,6 +3299,8 @@ While drawing say: “Namespace mutations move pointers; immutable file versions
 
 ### Beat 7 — Draw upload
 
+**Figure F8.02 — Draw upload (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant C as Sync Client
@@ -2704,6 +3336,10 @@ While drawing say: “Uploaded chunks are not visible until metadata commit.”
 
 ### Beat 9 — Architecture
 
+*(Step 2 — HLD buy-in)*
+
+**Figure F8.03 — Architecture (Step 2)**
+
 ```mermaid
 flowchart LR
   Client[Sync Client] --> API[Metadata API]
@@ -2738,6 +3374,8 @@ While drawing say: “Object storage owns bytes; metadata owns reachability and 
 
 **Draw now:** sharing revocation propagation.
 
+**Figure F8.04 — Sharing revocation propagation (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant O as Owner
@@ -2766,7 +3404,55 @@ While drawing say: “Authoritative ACL changes first; cache invalidation then b
 - Namespace home shard
 - Hash-distributed chunks
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F8.HLD — Dropbox high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Desktop, mobile, web clients"] --> Edge["LB and API gateway"]
+  Edge --> Service["Namespace and Upload Services"]
+  Service --> Cache[("upload session cache")]
+  Service --> DB[("namespace DB and chunk store")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["file events"]]
+  Queue --> Worker["sync, scan, garbage-collection workers"]
+  Worker --> DB
+  Worker --> External["push notification gateway"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F8.LLD — Revision commit and sync internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["commit revision handler"] --> DomainA["ACL and parent-version checks"]
+  DomainA --> DomainB["chunk manifest validator"]
+  DomainB --> Repo["namespace and revision repository"]
+  Repo --> Cache[("upload session cache")]
+  Repo --> DB[("namespace DB and chunk store")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["file events"]]
+  Queue --> Worker["sync, scan, garbage-collection workers"]
+  Worker --> External["push notification gateway"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 12 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Immutable chunks and versions make retries and sync tractable. A conditional metadata commit controls visibility, and base-version checks surface conflicts instead of losing work.”
 
@@ -2779,6 +3465,8 @@ While drawing say: “Authoritative ACL changes first; cache invalidation then b
 ## 9. URL Shortener — condensed progressive interview
 
 ### Beat 1 — Requirements
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design a URL shortener.
 
@@ -2818,6 +3506,8 @@ While drawing say: “Authoritative ACL changes first; cache invalidation then b
 
 **Draw now:** URL-shortener latency lanes.
 
+**Figure F9.01 — URL-shortener latency lanes (Step 3)**
+
 ```mermaid
 flowchart LR
   Browser --> Redirect["Redirect p99 under 100 ms"]
@@ -2830,6 +3520,8 @@ flowchart LR
 While drawing say: “Redirect latency and availability are isolated from analytics durability.”
 
 ### Beat 4 — Model
+
+*(Step 3 — Deep dive)*
 
 **You (ask / say / draw):** “`Link(code, destination, owner, created, expires, status, version)` plus Alias uniqueness.”
 
@@ -2869,6 +3561,8 @@ While drawing say: “Redirect latency and availability are isolated from analyt
 
 ### Beat 7 — Draw redirect path
 
+**Figure F9.02 — Draw redirect path (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant B as Browser
@@ -2905,6 +3599,10 @@ While drawing say: “Negative cache entries are short so new aliases become vis
 
 ### Beat 9 — Architecture
 
+*(Step 2 — HLD buy-in)*
+
+**Figure F9.03 — Architecture (Step 2)**
+
 ```mermaid
 flowchart LR
   Browser --> CDN
@@ -2939,6 +3637,8 @@ While drawing say: “Redirect does not wait for analytics.”
 
 **Draw now:** viral-link disable propagation.
 
+**Figure F9.04 — Viral-link disable propagation (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant O as Owner
@@ -2968,7 +3668,58 @@ While drawing say: “The tombstone is immediate truth; purge plus TTL bounds st
 - Global read replicas
 - Alias ownership
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F9.HLD — URL Shortener high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Browser and API clients"] --> Edge["LB and API gateway"]
+  Edge --> Service["Redirect and Link Services"]
+  Service --> Cache[("code-to-URL cache")]
+  Service --> DB[("link mapping store")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["link events"]]
+  Queue --> Worker["analytics, abuse, purge workers"]
+  Worker --> DB
+  Worker --> External["threat intelligence provider"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F9.LLD — Hash and ID generation internals (Step 3)**
+
+```mermaid
+flowchart TB
+  Create["Create link handler"] --> Strategy{"Code strategy"}
+  Strategy --> Random["CSPRNG random code"]
+  Strategy --> Hash["URL hash plus collision probe"]
+  Strategy --> ID["Distributed numeric ID"]
+  ID --> Base62["Base62 encoder"]
+  Random --> Reserve["Conditional code reservation"]
+  Hash --> Reserve
+  Base62 --> Reserve
+  Reserve --> DB[("Unique code mapping")]
+  Reserve --> Collision{"Collision"}
+  Collision -->|Yes| Strategy
+  Collision -->|No| Publish["Publish mapping and outbox"]
+  Publish --> Cache[("Redirect cache")]
+  Publish --> Queue[["Analytics and abuse events"]]
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 12 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “The redirect path is cache-first and independent of analytics. Link metadata controls liveness, random codes scale creation, and invalidation plus TTL bounds disable latency.”
 
@@ -2981,6 +3732,8 @@ While drawing say: “The tombstone is immediate truth; purge plus TTL bounds st
 ## 10. Rate Limiter / Hit Counter — condensed progressive interview
 
 ### Beat 1 — Clarify policy
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design a rate limiter.
 
@@ -3020,6 +3773,8 @@ While drawing say: “The tombstone is immediate truth; purge plus TTL bounds st
 
 **Draw now:** the rate-limiter decision budget.
 
+**Figure F10.01 — The rate-limiter decision budget (Step 3)**
+
 ```mermaid
 flowchart LR
   Request --> Policy[Resolve policy]
@@ -3033,6 +3788,8 @@ flowchart LR
 While drawing say: “The common decision stays local and under five milliseconds; failure behavior comes from policy.”
 
 ### Beat 4 — Algorithm
+
+*(Step 3 — Deep dive)*
 
 **Interviewer:** Pick an algorithm.
 
@@ -3073,6 +3830,8 @@ While drawing say: “The common decision stays local and under five millisecond
 - Server time or bounded skew
 
 ### Beat 7 — Draw local/global path
+
+**Figure F10.02 — Draw local/global path (Step 3)**
 
 ```mermaid
 flowchart LR
@@ -3118,6 +3877,8 @@ While drawing say: “Leases bound overshoot while removing a network hop from m
 
 **Draw now:** lease failure and epoch recovery.
 
+**Figure F10.03 — Lease failure and epoch recovery (Step 3)**
+
 ```mermaid
 stateDiagram-v2
   [*] --> LEASED
@@ -3158,7 +3919,55 @@ While drawing say: “Epochs prevent old regional leases from becoming valid aga
 - Hot-key options
 - Strictness trade-off
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F10.HLD — Rate Limiter high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["API clients"] --> Edge["LB and API gateway"]
+  Edge --> Service["Edge Limiter and Quota Service"]
+  Service --> Cache[("local token cache")]
+  Service --> DB[("partitioned counter and policy stores")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["usage events"]]
+  Queue --> Worker["policy and rollup workers"]
+  Worker --> DB
+  Worker --> External["protected application services"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F10.LLD — Quota decision and lease internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["policy key extractor"] --> DomainA["local token bucket"]
+  DomainA --> DomainB["epoch-fenced lease client"]
+  DomainB --> Repo["atomic counter repository"]
+  Repo --> Cache[("local token cache")]
+  Repo --> DB[("partitioned counter and policy stores")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["usage events"]]
+  Queue --> Worker["policy and rollup workers"]
+  Worker --> External["protected application services"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 12 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Token buckets model bursts; atomic mutation handles node races; hierarchical leases keep decisions local and quantify over-admission. Failure mode is a product policy, not a hidden default.”
 
@@ -3171,6 +3980,8 @@ While drawing say: “Epochs prevent old regional leases from becoming valid aga
 ## 11. Enterprise RAG / Agent Platform — condensed progressive interview
 
 ### Beat 1 — Product scope
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design enterprise RAG.
 
@@ -3210,6 +4021,8 @@ While drawing say: “Epochs prevent old regional leases from becoming valid aga
 
 **Draw now:** the RAG trust boundary.
 
+**Figure F11.01 — The RAG trust boundary (Step 3)**
+
 ```mermaid
 flowchart LR
   Identity --> Policy[ACL policy]
@@ -3237,6 +4050,8 @@ While drawing say: “Authorization filters retrieval itself, so forbidden text 
 
 ### Beat 5 — Entities
 
+*(Step 3 — Deep dive)*
+
 **You (ask / say / draw):** “Start Source, Document, DocumentVersion, Chunk, ACL, and IngestionRun.”
 
 **Interviewer:** Why version documents?
@@ -3260,6 +4075,8 @@ While drawing say: “Authorization filters retrieval itself, so forbidden text 
 - Checkpointed replay
 
 ### Beat 7 — Draw ingestion
+
+**Figure F11.02 — Draw ingestion (Step 3)**
 
 ```mermaid
 flowchart LR
@@ -3309,6 +4126,8 @@ While drawing say: “A version is searchable only after all required artifacts 
 
 ### Beat 10 — Draw grounded answer
 
+**Figure F11.03 — Draw grounded answer (Step 3)**
+
 ```mermaid
 sequenceDiagram
   participant U as User
@@ -3345,6 +4164,8 @@ While drawing say: “Unauthorized chunks never enter the prompt.”
 
 **Draw now:** prompt-injection control flow.
 
+**Figure F11.04 — Prompt-injection control flow (Step 3)**
+
 ```mermaid
 flowchart LR
   System[System policy] --> Builder[Prompt builder]
@@ -3358,7 +4179,55 @@ flowchart LR
 
 While drawing say: “Retrieved text is evidence, never control policy, and v1 exposes no mutation tools.”
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F11.HLD — RAG high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Enterprise users and connectors"] --> Edge["LB and API gateway"]
+  Edge --> Service["Grounded Query and Ingest Services"]
+  Service --> Cache[("policy-aware query cache")]
+  Service --> DB[("document, vector, ACL stores")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["ingestion and audit queues"]]
+  Queue --> Worker["parse, embed, evaluation workers"]
+  Worker --> DB
+  Worker --> External["embedding and LLM providers"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F11.LLD — Retrieval and grounding internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["identity-aware query handler"] --> DomainA["hybrid retrieval and ACL filter"]
+  DomainA --> DomainB["reranker and injection guard"]
+  DomainB --> Repo["citation and audit repository"]
+  Repo --> Cache[("policy-aware query cache")]
+  Repo --> DB[("document, vector, ACL stores")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["ingestion and audit queues"]]
+  Queue --> Worker["parse, embed, evaluation workers"]
+  Worker --> External["embedding and LLM providers"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 12 — Scale and close
+
+*(Step 4 — Wrap up)*
 
 **Interviewer:** Ten-times corpus and QPS.
 
@@ -3377,6 +4246,8 @@ While drawing say: “Retrieved text is evidence, never control policy, and v1 e
 ## 12. IoT / Telemetry Ingestion — shorter progressive sketch
 
 ### Beat 1 — Clarify devices
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design IoT ingestion.
 
@@ -3416,6 +4287,8 @@ While drawing say: “Retrieved text is evidence, never control policy, and v1 e
 
 ### Beat 4 — Device API
 
+*(Step 3 — Deep dive)*
+
 **You (ask / say / draw):** “MQTT publish or HTTPS batch with device credentials; response includes highest contiguous sequence.”
 
 **Interviewer:** Retry?
@@ -3427,6 +4300,8 @@ While drawing say: “Retrieved text is evidence, never control policy, and v1 e
 - Sequence dedupe
 
 **Draw now:** the device retry and ordering path.
+
+**Figure F12.01 — The device retry and ordering path (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -3443,6 +4318,10 @@ sequenceDiagram
 While drawing say: “The sequence acknowledgment lets an offline device replay only what the platform has not durably accepted.”
 
 ### Beat 5 — Architecture
+
+*(Step 2 — HLD buy-in)*
+
+**Figure F12.02 — Architecture (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -3488,7 +4367,55 @@ While drawing say: “Broker partitions by device ID; malformed data is quaranti
 - Reconnect smoothing
 - Lag-based protection
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F12.HLD — IoT high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Devices and gateways"] --> Edge["LB and API gateway"]
+  Edge --> Service["Telemetry Ingest Service"]
+  Service --> Cache[("sequence dedupe cache")]
+  Service --> DB[("time-series and object stores")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["telemetry partitions"]]
+  Queue --> Worker["normalize, route, alert workers"]
+  Worker --> DB
+  Worker --> External["device command adapters"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F12.LLD — Telemetry validation internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["telemetry batch handler"] --> DomainA["identity and schema validator"]
+  DomainA --> DomainB["sequence and partition router"]
+  DomainB --> Repo["device-state repository"]
+  Repo --> Cache[("sequence dedupe cache")]
+  Repo --> DB[("time-series and object stores")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["telemetry partitions"]]
+  Queue --> Worker["normalize, route, alert workers"]
+  Worker --> External["device command adapters"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 8 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Device sequence makes replay idempotent; durable append defines acknowledgment; event time preserves late telemetry while guarded sequence updates protect the twin.”
 
@@ -3501,6 +4428,8 @@ While drawing say: “Broker partitions by device ID; malformed data is quaranti
 ## 13. Notification System — shorter progressive sketch
 
 ### Beat 1 — Channels
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design notifications.
 
@@ -3528,6 +4457,8 @@ While drawing say: “Broker partitions by device ID; malformed data is quaranti
 
 ### Beat 3 — Entities
 
+*(Step 3 — Deep dive)*
+
 **You (ask / say / draw):** “Notification, TemplateVersion, Preference, DeliveryAttempt, and Suppression.”
 
 **Interviewer:** Why template version?
@@ -3539,6 +4470,8 @@ While drawing say: “Broker partitions by device ID; malformed data is quaranti
 - Attempt history
 
 **Draw now:** notification intent and delivery entities.
+
+**Figure F13.01 — Notification intent and delivery entities (Step 3)**
 
 ```mermaid
 erDiagram
@@ -3572,6 +4505,10 @@ While drawing say: “One durable intent can create independent, auditable attem
 - Idempotent acceptance
 
 ### Beat 5 — Architecture
+
+*(Step 2 — HLD buy-in)*
+
+**Figure F13.02 — Architecture (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -3621,7 +4558,55 @@ While drawing say: “Each channel has independent retries, rate limits, and cir
 - Ambiguous-send handling
 - DLQ and failover
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F13.HLD — Notifications high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Product services"] --> Edge["LB and API gateway"]
+  Edge --> Service["Notification Intent Service"]
+  Service --> Cache[("preference cache")]
+  Service --> DB[("intent and template DB")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["channel work queues"]]
+  Queue --> Worker["email, SMS, push workers"]
+  Worker --> DB
+  Worker --> External["channel providers"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F13.LLD — Delivery orchestration internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["create intent handler"] --> DomainA["consent and preference resolver"]
+  DomainA --> DomainB["template and channel planner"]
+  DomainB --> Repo["intent and attempt repository"]
+  Repo --> Cache[("preference cache")]
+  Repo --> DB[("intent and template DB")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["channel work queues"]]
+  Queue --> Worker["email, SMS, push workers"]
+  Worker --> External["channel providers"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 8 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Durable acceptance is separate from delivery. Idempotency controls requests, send-time preference checks control policy, and per-channel workers contain provider failures.”
 
@@ -3634,6 +4619,8 @@ While drawing say: “Each channel has independent retries, rate limits, and cir
 ## 14. Chat / Messaging — shorter progressive sketch
 
 ### Beat 1 — Scope
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design chat.
 
@@ -3673,6 +4660,8 @@ While drawing say: “Each channel has independent retries, rate limits, and cir
 
 ### Beat 4 — Model and API
 
+*(Step 3 — Deep dive)*
+
 **You (ask / say / draw):** “Conversation, Membership, Message, DeviceCursor. `POST /conversations/{id}/messages` includes clientMessageId.”
 
 **Interviewer:** Retry?
@@ -3684,6 +4673,8 @@ While drawing say: “Each channel has independent retries, rate limits, and cir
 - Idempotent send
 
 **Draw now:** per-conversation ordering.
+
+**Figure F14.01 — Per-conversation ordering (Step 3)**
 
 ```mermaid
 sequenceDiagram
@@ -3702,6 +4693,10 @@ sequenceDiagram
 While drawing say: “Concurrent sends become a single durable order at the conversation home shard.”
 
 ### Beat 5 — Architecture
+
+*(Step 2 — HLD buy-in)*
+
+**Figure F14.02 — Architecture (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -3749,7 +4744,56 @@ While drawing say: “The conversation log is durable truth; sockets are deliver
 - Cursor-based catch-up
 - Honest delivery semantics
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F14.HLD — Chat high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Mobile and web clients"] --> Edge["LB and API gateway"]
+  Edge --> Service["Session and Message Services"]
+  Service --> Cache[("presence cache")]
+  Service --> DB[("conversation and inbox stores")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["conversation event stream"]]
+  Queue --> Worker["online and offline fanout workers"]
+  Worker --> DB
+  Worker --> External["push and media providers"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F14.LLD — Online and offline fanout internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Send["Send-message handler"] --> Auth["Membership and dedupe checks"]
+  Auth --> Seq["Conversation sequence allocator"]
+  Seq --> DB[("Message store")]
+  DB --> Outbox["Message event outbox"]
+  Outbox --> Queue[["Conversation event stream"]]
+  Queue --> Online{"Recipient online"}
+  Online -->|Yes| Socket["Realtime socket delivery"]
+  Online -->|No| Inbox[("Durable offline inbox")]
+  Socket --> Ack["Delivery acknowledgment"]
+  Inbox --> Sync["Reconnect cursor sync"]
+  Ack --> DB
+  Sync --> DB
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 8 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “A home shard gives per-conversation sequence; durable commit precedes ACK; gateways and fan-out may duplicate, so devices resume by cursor and dedupe.”
 
@@ -3762,6 +4806,8 @@ While drawing say: “The conversation log is durable truth; sockets are deliver
 ## 15. Distributed Job / Workflow System — shorter progressive sketch
 
 ### Beat 1 — Scope
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design a job system.
 
@@ -3801,6 +4847,8 @@ While drawing say: “The conversation log is durable truth; sockets are deliver
 
 ### Beat 4 — Model and API
 
+*(Step 3 — Deep dive)*
+
 **You (ask / say / draw):** “WorkflowRun, TaskRun, Dependency, Attempt, and Lease. `POST /workflows/{type}/runs` uses an idempotency key.”
 
 **Interviewer:** Status?
@@ -3812,6 +4860,8 @@ While drawing say: “The conversation log is durable truth; sockets are deliver
 - Idempotent submission
 
 **Draw now:** the workflow task lifecycle.
+
+**Figure F15.01 — The workflow task lifecycle (Step 3)**
 
 ```mermaid
 stateDiagram-v2
@@ -3828,6 +4878,10 @@ stateDiagram-v2
 While drawing say: “Database state advances the DAG, and a lease only grants temporary execution authority.”
 
 ### Beat 5 — Architecture
+
+*(Step 2 — HLD buy-in)*
+
+**Figure F15.02 — Architecture (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -3874,7 +4928,55 @@ While drawing say: “The queue announces readiness; database state decides whet
 - Corrected guarantee
 - Side-effect contract
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F15.HLD — Workflow high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Users and services"] --> Edge["LB and API gateway"]
+  Edge --> Service["Workflow Control Service"]
+  Service --> Cache[("runnable-task cache")]
+  Service --> DB[("run, task, attempt DB")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["partitioned task queues"]]
+  Queue --> Worker["worker fleet and watchdogs"]
+  Worker --> DB
+  Worker --> External["external job systems"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F15.LLD — Task lease and retry internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["run scheduler"] --> DomainA["dependency readiness evaluator"]
+  DomainA --> DomainB["attempt lease and fencing policy"]
+  DomainB --> Repo["task and attempt repository"]
+  Repo --> Cache[("runnable-task cache")]
+  Repo --> DB[("run, task, attempt DB")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["partitioned task queues"]]
+  Queue --> Worker["worker fleet and watchdogs"]
+  Worker --> External["external job systems"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 8 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Database state owns the DAG; queues are retryable signals. Leases and fencing handle crashes, while idempotent handlers make at-least-once execution safe.”
 
@@ -3887,6 +4989,8 @@ While drawing say: “The queue announces readiness; database state decides whet
 ## 16. Feature Store / Model Serving — shorter progressive sketch
 
 ### Beat 1 — Scope
+
+*(Step 1 — Scope)*
 
 **Interviewer:** Design a feature store.
 
@@ -3926,6 +5030,8 @@ While drawing say: “The queue announces readiness; database state decides whet
 
 ### Beat 4 — Entities and API
 
+*(Step 3 — Deep dive)*
+
 **You (ask / say / draw):** “FeatureDefinition, FeatureVersion, EntityKey, FeatureValue, MaterializationRun. `GetFeatures(entity, featureVersionSet)` returns values and timestamps.”
 
 **Interviewer:** Why version set?
@@ -3937,6 +5043,8 @@ While drawing say: “The queue announces readiness; database state decides whet
 - Model-pinned feature set
 
 **Draw now:** training and serving consistency.
+
+**Figure F16.01 — Training and serving consistency (Step 3)**
 
 ```mermaid
 flowchart LR
@@ -3953,6 +5061,10 @@ flowchart LR
 While drawing say: “The model pins feature semantics, and both materialization paths trace back to those versions.”
 
 ### Beat 5 — Architecture
+
+*(Step 2 — HLD buy-in)*
+
+**Figure F16.02 — Architecture (Step 2)**
 
 ```mermaid
 flowchart LR
@@ -4002,7 +5114,55 @@ While drawing say: “The same versioned transformation definition drives both p
 - Model-specific fallback
 - Version validation
 
+### Practice plate — Step 2 HLD buy-in
+
+**You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
+
+**Figure F16.HLD — Feature Store high-level architecture (Step 2)**
+
+```mermaid
+flowchart LR
+  Client["Batch, stream, serving clients"] --> Edge["LB and API gateway"]
+  Edge --> Service["Feature Ingest and Serving Services"]
+  Service --> Cache[("version-aware feature cache")]
+  Service --> DB[("offline, online, registry stores")]
+  DB --> Outbox["Transactional outbox"]
+  Outbox --> Queue[["materialization events"]]
+  Queue --> Worker["validation and materialization workers"]
+  Worker --> DB
+  Worker --> External["model serving clients"]
+  Service --> Observe["Logs, metrics, traces"]
+  Worker --> Observe
+```
+
+While drawing say: “Does this separation of synchronous truth and asynchronous work match the scope, and which box should we deepen?”
+
+### Practice plate — Step 3 component deep dive
+
+**You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
+
+**Figure F16.LLD — Versioned feature-serving internals (Step 3)**
+
+```mermaid
+flowchart LR
+  Handler["get-features handler"] --> DomainA["feature-set version resolver"]
+  DomainA --> DomainB["fetch and point-in-time planner"]
+  DomainB --> Repo["feature and lineage repository"]
+  Repo --> Cache[("version-aware feature cache")]
+  Repo --> DB[("offline, online, registry stores")]
+  DomainB --> Outbox["Outbox writer"]
+  Outbox --> Relay["Outbox relay"]
+  Relay --> Queue[["materialization events"]]
+  Queue --> Worker["validation and materialization workers"]
+  Worker --> External["model serving clients"]
+  Worker --> Repo
+```
+
+While drawing say: “This is the component boundary I would test under concurrency, retries, and dependency failure.”
+
 ### Beat 8 — Close
+
+*(Step 4 — Wrap up)*
 
 **You:** “Versioned definitions and point-in-time lineage protect training correctness; online KV serves low-latency values with explicit freshness and fallback. Drift checks compare offline and online samples.”
 
