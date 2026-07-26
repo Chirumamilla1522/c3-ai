@@ -15,148 +15,174 @@ Figures are numbered as **Figure N: Diagram N — title**. Under each figure, a 
 ### Figure index (all diagrams)
 
 Use this list to jump by number. Every figure also has a details table with its interview step.
+> **Note:** Figures continue through each problem’s end package (complete HLD with web servers/DB/cache/queues, LLD internals, and data-plane ownership). Latest figure number: **Figure 164: Diagram 164**.
 
-| Figure | Diagram | Title | Interview step | Type |
-|------:|--------:|-------|----------------|------|
-| Figure 1 | Diagram 1 | Four-step interview timeline | Steps 1–4 | Flowchart |
-| Figure 2 | Diagram 2 | Scope board and requirement boundary | Step 1 | Scope / requirements diagram |
-| Figure 3 | Diagram 3 | Generic high-level design template | Step 2 | High-level design (HLD) box diagram |
-| Figure 4 | Diagram 4 | Generic service component deep dive | Step 3 | Low-level / component diagram (LLD) |
-| Figure 5 | Diagram 5 | Wrap-up checklist and next scale curve | Step 4 | Flowchart |
-| Figure 6 | Diagram 6 | The actors and driver journey | Step 1 | Scope / requirements diagram |
-| Figure 7 | Diagram 7 | The NFR board and consistency boundary | Step 1 | Scope / requirements diagram |
-| Figure 8 | Diagram 8 | The first partial parking ERD | Step 3 | Entity-relationship diagram (ERD) |
-| Figure 9 | Diagram 9 | The evolving ERD after adding the stay lifecycle | Step 3 | Entity-relationship diagram (ERD) |
-| Figure 10 | Diagram 10 | The minimum parking model | Step 3 | Entity-relationship diagram (ERD) |
-| Figure 11 | Diagram 11 | The compatibility ranking decision | Step 3 | Flowchart |
-| Figure 12 | Diagram 12 | The entry API sequence | Step 3 | Sequence diagram |
-| Figure 13 | Diagram 13 | The gate timeout and retry sequence | Step 3 | Sequence diagram |
-| Figure 14 | Diagram 14 | The payment entities added to the parking model | Step 3 | Entity-relationship diagram (ERD) |
-| Figure 15 | Diagram 15 | The last-spot sequence | Step 3 | Sequence diagram |
-| Figure 16 | Diagram 16 | Payment crash recovery with an outbox | Step 3 | Sequence diagram |
-| Figure 17 | Diagram 17 | Session and payment-aware transitions | Step 3 | State machine |
-| Figure 18 | Diagram 18 | The expiry and reconciliation worker boundary | Step 3 | Flowchart |
-| Figure 19 | Diagram 19 | Lot-based sharding at scale | Step 2 | Flowchart |
-| Figure 20 | Diagram 20 | Parking Lot high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 21 | Diagram 21 | Spot-claim service internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 22 | Diagram 22 | Parking Lot final earned HLD architecture | Step 2 | Flowchart |
-| Figure 23 | Diagram 23 | The customer journey and promise boundary | Step 1 | Scope / requirements diagram |
-| Figure 24 | Diagram 24 | The car-rental NFR split | Step 1 | Scope / requirements diagram |
-| Figure 25 | Diagram 25 | The inventory-model correction | Step 3 | Flowchart |
-| Figure 26 | Diagram 26 | Reservation promise versus physical allocation | Step 3 | Entity-relationship diagram (ERD) |
-| Figure 27 | Diagram 27 | The booking API decision path | Step 3 | Sequence diagram |
-| Figure 28 | Diagram 28 | Draw booking sequence | Step 3 | Sequence diagram |
-| Figure 29 | Diagram 29 | Pickup payment crash recovery | Step 3 | State machine |
-| Figure 30 | Diagram 30 | Regional search scaling without weakening booking | Step 3 | Flowchart |
-| Figure 31 | Diagram 31 | Draw earned architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 32 | Diagram 32 | Car Rental high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 33 | Diagram 33 | Reservation allocation internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 34 | Diagram 34 | The metrics actors and data journey | Step 1 | Scope / requirements diagram |
-| Figure 35 | Diagram 35 | The metrics NFR lanes | Step 1 | Scope / requirements diagram |
-| Figure 36 | Diagram 36 | The ingest API acknowledgment sequence | Step 3 | Sequence diagram |
-| Figure 37 | Diagram 37 | Synchronous acknowledgment and asynchronous processing | Step 3 | Flowchart |
-| Figure 38 | Diagram 38 | Late-data window correction | Step 3 | Flowchart |
-| Figure 39 | Diagram 39 | Query fan-out | Step 3 | Sequence diagram |
-| Figure 40 | Diagram 40 | The corrected storage tiers | Step 2 | Flowchart |
-| Figure 41 | Diagram 41 | Metrics high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 42 | Diagram 42 | Ingest and query engine internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 43 | Diagram 43 | The initial paste lifecycle | Step 3 | Flowchart |
-| Figure 44 | Diagram 44 | The Pastebin NFR board | Step 1 | Scope / requirements diagram |
-| Figure 45 | Diagram 45 | The partial metadata and body model | Step 3 | Entity-relationship diagram (ERD) |
-| Figure 46 | Diagram 46 | The corrected publish states | Step 3 | State machine |
-| Figure 47 | Diagram 47 | Draw the write path | Step 3 | Sequence diagram |
-| Figure 48 | Diagram 48 | Earn read architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 49 | Diagram 49 | Draw stampede control | Step 3 | Sequence diagram |
-| Figure 50 | Diagram 50 | Logical expiry and physical cleanup | Step 3 | Sequence diagram |
-| Figure 51 | Diagram 51 | Pastebin high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 52 | Diagram 52 | Paste publish internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 53 | Diagram 53 | The elevator actors and control boundary | Step 1 | Flowchart |
-| Figure 54 | Diagram 54 | The elevator NFR trade-off board | Step 1 | Scope / requirements diagram |
-| Figure 55 | Diagram 55 | Draw the class model | Step 3 | Flowchart |
-| Figure 56 | Diagram 56 | The ownership correction | Step 3 | Sequence diagram |
-| Figure 57 | Diagram 57 | State machine | Step 3 | State machine |
-| Figure 58 | Diagram 58 | Draw runtime interaction | Step 3 | Sequence diagram |
-| Figure 59 | Diagram 59 | Car-failure recovery | Step 3 | Flowchart |
-| Figure 60 | Diagram 60 | Elevator high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 61 | Diagram 61 | Car-controller modules and state | Step 3 | Low-level / component diagram (LLD) |
-| Figure 62 | Diagram 62 | Ticketing discovery versus allocation | Step 3 | Flowchart |
-| Figure 63 | Diagram 63 | Draw lifecycle | Step 3 | State machine |
-| Figure 64 | Diagram 64 | Ticket payment crash recovery | Step 3 | Sequence diagram |
-| Figure 65 | Diagram 65 | Draw earned architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 66 | Diagram 66 | Tickets high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 67 | Diagram 67 | Seat-hold allocation internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 68 | Diagram 68 | Ride-sharing state separation | Step 3 | Flowchart |
-| Figure 69 | Diagram 69 | Draw match sequence | Step 3 | Sequence diagram |
-| Figure 70 | Diagram 70 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 71 | Diagram 71 | Assignment loss and recovery | Step 3 | State machine |
-| Figure 72 | Diagram 72 | Rides high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 73 | Diagram 73 | Matching and assignment internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 74 | Diagram 74 | Dropbox metadata and content ownership | Step 3 | Flowchart |
-| Figure 75 | Diagram 75 | Draw upload | Step 3 | Sequence diagram |
-| Figure 76 | Diagram 76 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 77 | Diagram 77 | Sharing revocation propagation | Step 3 | Sequence diagram |
-| Figure 78 | Diagram 78 | Dropbox high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 79 | Diagram 79 | Revision commit and sync internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 80 | Diagram 80 | URL-shortener latency lanes | Step 3 | Flowchart |
-| Figure 81 | Diagram 81 | Draw redirect path | Step 3 | Sequence diagram |
-| Figure 82 | Diagram 82 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 83 | Diagram 83 | Viral-link disable propagation | Step 3 | Sequence diagram |
-| Figure 84 | Diagram 84 | URL Shortener high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 85 | Diagram 85 | Hash and ID generation internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 86 | Diagram 86 | The rate-limiter decision budget | Step 3 | Flowchart |
-| Figure 87 | Diagram 87 | Draw local/global path | Step 3 | Flowchart |
-| Figure 88 | Diagram 88 | Lease failure and epoch recovery | Step 3 | State machine |
-| Figure 89 | Diagram 89 | Rate Limiter high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 90 | Diagram 90 | Quota decision and lease internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 91 | Diagram 91 | The RAG trust boundary | Step 3 | Flowchart |
-| Figure 92 | Diagram 92 | Draw ingestion | Step 3 | Flowchart |
-| Figure 93 | Diagram 93 | Draw grounded answer | Step 3 | Sequence diagram |
-| Figure 94 | Diagram 94 | Prompt-injection control flow | Step 3 | Flowchart |
-| Figure 95 | Diagram 95 | RAG high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 96 | Diagram 96 | Retrieval and grounding internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 97 | Diagram 97 | The device retry and ordering path | Step 3 | Sequence diagram |
-| Figure 98 | Diagram 98 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 99 | Diagram 99 | IoT high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 100 | Diagram 100 | Telemetry validation internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 101 | Diagram 101 | Notification intent and delivery entities | Step 3 | Entity-relationship diagram (ERD) |
-| Figure 102 | Diagram 102 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 103 | Diagram 103 | Notifications high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 104 | Diagram 104 | Delivery orchestration internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 105 | Diagram 105 | Per-conversation ordering | Step 3 | Sequence diagram |
-| Figure 106 | Diagram 106 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 107 | Diagram 107 | Chat high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 108 | Diagram 108 | Online and offline fanout internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 109 | Diagram 109 | The workflow task lifecycle | Step 3 | State machine |
-| Figure 110 | Diagram 110 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 111 | Diagram 111 | Workflow high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 112 | Diagram 112 | Task lease and retry internals | Step 3 | Low-level / component diagram (LLD) |
-| Figure 113 | Diagram 113 | Training and serving consistency | Step 3 | Flowchart |
-| Figure 114 | Diagram 114 | Architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 115 | Diagram 115 | Feature Store high-level architecture | Step 2 | High-level design (HLD) box diagram |
-| Figure 116 | Diagram 116 | Versioned feature-serving internals | Step 3 | Low-level / component diagram (LLD) |
-
-
-**Figure 1: Diagram 1 — Four-step interview timeline**
-
-| | |
-|:---|:---|
-| **Interview step** | Steps 1–4 — full interview clock |
-| **Diagram type** | Flowchart |
-| **Details** | Visual board update for: Four-step interview timeline. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
-| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1–4 goal. |
-
-```mermaid
-flowchart LR
-  S1["Step 1: scope<br/>3–10 min"] --> S2["Step 2: HLD buy-in<br/>10–15 min"]
-  S2 --> S3["Step 3: deep dive<br/>10–25 min"]
-  S3 --> S4["Step 4: wrap up<br/>3–5 min"]
-  S1 -. "requirements and NFRs" .-> S2
-  S2 -. "agreed blueprint" .-> S3
-  S3 -. "risks and evidence" .-> S4
-```
-
-While drawing say: “I’ll first agree on scope, then propose a blueprint, deepen the most important component, and reserve time to close.”
-
+| Figure | Diagram | Title | Interview step |
+|------:|--------:|-------|----------------|
+| Figure 1 | Diagram 1 | Four-step interview timeline | Steps 1–4 |
+| Figure 2 | Diagram 2 | Scope board and requirement boundary | Step 1 |
+| Figure 3 | Diagram 3 | Generic high-level design template | Step 2 |
+| Figure 4 | Diagram 4 | Generic service component deep dive | Step 3 |
+| Figure 5 | Diagram 5 | Wrap-up checklist and next scale curve | Step 4 |
+| Figure 6 | Diagram 6 | The actors and driver journey | Step 1 |
+| Figure 7 | Diagram 7 | The NFR board and consistency boundary | Step 1 |
+| Figure 8 | Diagram 8 | The first partial parking ERD | Step 3 |
+| Figure 9 | Diagram 9 | The evolving ERD after adding the stay lifecycle | Step 3 |
+| Figure 10 | Diagram 10 | The minimum parking model | Step 3 |
+| Figure 11 | Diagram 11 | The compatibility ranking decision | Step 3 |
+| Figure 12 | Diagram 12 | The entry API sequence | Step 3 |
+| Figure 13 | Diagram 13 | The gate timeout and retry sequence | Step 3 |
+| Figure 14 | Diagram 14 | The payment entities added to the parking model | Step 3 |
+| Figure 15 | Diagram 15 | The last-spot sequence | Step 3 |
+| Figure 16 | Diagram 16 | Payment crash recovery with an outbox | Step 3 |
+| Figure 17 | Diagram 17 | Session and payment-aware transitions | Step 3 |
+| Figure 18 | Diagram 18 | The expiry and reconciliation worker boundary | Step 3 |
+| Figure 19 | Diagram 19 | Lot-based sharding at scale | Step 2 |
+| Figure 20 | Diagram 20 | Parking Lot high-level architecture | Step 2 |
+| Figure 21 | Diagram 21 | Spot-claim service internals | Step 3 |
+| Figure 22 | Diagram 22 | Parking Lot final earned HLD architecture | Step 2 |
+| Figure 117 | Diagram 117 | Parking Lot complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 118 | Diagram 118 | Parking Lot complete LLD service internals | Step 3 |
+| Figure 119 | Diagram 119 | Parking Lot data stores and ownership | Step 3 |
+| Figure 23 | Diagram 23 | The customer journey and promise boundary | Step 1 |
+| Figure 24 | Diagram 24 | The car-rental NFR split | Step 1 |
+| Figure 25 | Diagram 25 | The inventory-model correction | Step 3 |
+| Figure 26 | Diagram 26 | Reservation promise versus physical allocation | Step 3 |
+| Figure 27 | Diagram 27 | The booking API decision path | Step 3 |
+| Figure 28 | Diagram 28 | Draw booking sequence | Step 3 |
+| Figure 29 | Diagram 29 | Pickup payment crash recovery | Step 3 |
+| Figure 30 | Diagram 30 | Regional search scaling without weakening booking | Step 3 |
+| Figure 31 | Diagram 31 | Draw earned architecture | Step 2 |
+| Figure 32 | Diagram 32 | Car Rental high-level architecture | Step 2 |
+| Figure 33 | Diagram 33 | Reservation allocation internals | Step 3 |
+| Figure 120 | Diagram 120 | Car Rental complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 121 | Diagram 121 | Car Rental complete LLD service internals | Step 3 |
+| Figure 122 | Diagram 122 | Car Rental data stores and ownership | Step 3 |
+| Figure 34 | Diagram 34 | The metrics actors and data journey | Step 1 |
+| Figure 35 | Diagram 35 | The metrics NFR lanes | Step 1 |
+| Figure 36 | Diagram 36 | The ingest API acknowledgment sequence | Step 3 |
+| Figure 37 | Diagram 37 | Synchronous acknowledgment and asynchronous processing | Step 3 |
+| Figure 38 | Diagram 38 | Late-data window correction | Step 3 |
+| Figure 39 | Diagram 39 | Query fan-out | Step 3 |
+| Figure 40 | Diagram 40 | The corrected storage tiers | Step 2 |
+| Figure 41 | Diagram 41 | Metrics high-level architecture | Step 2 |
+| Figure 42 | Diagram 42 | Ingest and query engine internals | Step 3 |
+| Figure 123 | Diagram 123 | Metrics Platform complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 124 | Diagram 124 | Metrics Platform complete LLD service internals | Step 3 |
+| Figure 125 | Diagram 125 | Metrics Platform data stores and ownership | Step 3 |
+| Figure 43 | Diagram 43 | The initial paste lifecycle | Step 3 |
+| Figure 44 | Diagram 44 | The Pastebin NFR board | Step 1 |
+| Figure 45 | Diagram 45 | The partial metadata and body model | Step 3 |
+| Figure 46 | Diagram 46 | The corrected publish states | Step 3 |
+| Figure 47 | Diagram 47 | Draw the write path | Step 3 |
+| Figure 48 | Diagram 48 | Earn read architecture | Step 2 |
+| Figure 49 | Diagram 49 | Draw stampede control | Step 3 |
+| Figure 50 | Diagram 50 | Logical expiry and physical cleanup | Step 3 |
+| Figure 51 | Diagram 51 | Pastebin high-level architecture | Step 2 |
+| Figure 52 | Diagram 52 | Paste publish internals | Step 3 |
+| Figure 126 | Diagram 126 | Pastebin complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 127 | Diagram 127 | Pastebin complete LLD service internals | Step 3 |
+| Figure 128 | Diagram 128 | Pastebin data stores and ownership | Step 3 |
+| Figure 53 | Diagram 53 | The elevator actors and control boundary | Step 1 |
+| Figure 54 | Diagram 54 | The elevator NFR trade-off board | Step 1 |
+| Figure 55 | Diagram 55 | Draw the class model | Step 3 |
+| Figure 56 | Diagram 56 | The ownership correction | Step 3 |
+| Figure 57 | Diagram 57 | State machine | Step 3 |
+| Figure 58 | Diagram 58 | Draw runtime interaction | Step 3 |
+| Figure 59 | Diagram 59 | Car-failure recovery | Step 3 |
+| Figure 60 | Diagram 60 | Elevator high-level architecture | Step 2 |
+| Figure 61 | Diagram 61 | Car-controller modules and state | Step 3 |
+| Figure 129 | Diagram 129 | Elevator Control complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 130 | Diagram 130 | Elevator Control complete LLD service internals | Step 3 |
+| Figure 131 | Diagram 131 | Elevator Control data stores and ownership | Step 3 |
+| Figure 62 | Diagram 62 | Ticketing discovery versus allocation | Step 3 |
+| Figure 63 | Diagram 63 | Draw lifecycle | Step 3 |
+| Figure 64 | Diagram 64 | Ticket payment crash recovery | Step 3 |
+| Figure 65 | Diagram 65 | Draw earned architecture | Step 2 |
+| Figure 66 | Diagram 66 | Tickets high-level architecture | Step 2 |
+| Figure 67 | Diagram 67 | Seat-hold allocation internals | Step 3 |
+| Figure 132 | Diagram 132 | Ticket Booking complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 133 | Diagram 133 | Ticket Booking complete LLD service internals | Step 3 |
+| Figure 134 | Diagram 134 | Ticket Booking data stores and ownership | Step 3 |
+| Figure 68 | Diagram 68 | Ride-sharing state separation | Step 3 |
+| Figure 69 | Diagram 69 | Draw match sequence | Step 3 |
+| Figure 70 | Diagram 70 | Architecture | Step 2 |
+| Figure 71 | Diagram 71 | Assignment loss and recovery | Step 3 |
+| Figure 72 | Diagram 72 | Rides high-level architecture | Step 2 |
+| Figure 73 | Diagram 73 | Matching and assignment internals | Step 3 |
+| Figure 135 | Diagram 135 | Ride Sharing complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 136 | Diagram 136 | Ride Sharing complete LLD service internals | Step 3 |
+| Figure 137 | Diagram 137 | Ride Sharing data stores and ownership | Step 3 |
+| Figure 74 | Diagram 74 | Dropbox metadata and content ownership | Step 3 |
+| Figure 75 | Diagram 75 | Draw upload | Step 3 |
+| Figure 76 | Diagram 76 | Architecture | Step 2 |
+| Figure 77 | Diagram 77 | Sharing revocation propagation | Step 3 |
+| Figure 78 | Diagram 78 | Dropbox high-level architecture | Step 2 |
+| Figure 79 | Diagram 79 | Revision commit and sync internals | Step 3 |
+| Figure 138 | Diagram 138 | Dropbox-like Storage complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 139 | Diagram 139 | Dropbox-like Storage complete LLD service internals | Step 3 |
+| Figure 140 | Diagram 140 | Dropbox-like Storage data stores and ownership | Step 3 |
+| Figure 80 | Diagram 80 | URL-shortener latency lanes | Step 3 |
+| Figure 81 | Diagram 81 | Draw redirect path | Step 3 |
+| Figure 82 | Diagram 82 | Architecture | Step 2 |
+| Figure 83 | Diagram 83 | Viral-link disable propagation | Step 3 |
+| Figure 84 | Diagram 84 | URL Shortener high-level architecture | Step 2 |
+| Figure 85 | Diagram 85 | Hash and ID generation internals | Step 3 |
+| Figure 141 | Diagram 141 | URL Shortener complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 142 | Diagram 142 | URL Shortener complete LLD service internals | Step 3 |
+| Figure 143 | Diagram 143 | URL Shortener data stores and ownership | Step 3 |
+| Figure 86 | Diagram 86 | The rate-limiter decision budget | Step 3 |
+| Figure 87 | Diagram 87 | Draw local/global path | Step 3 |
+| Figure 88 | Diagram 88 | Lease failure and epoch recovery | Step 3 |
+| Figure 89 | Diagram 89 | Rate Limiter high-level architecture | Step 2 |
+| Figure 90 | Diagram 90 | Quota decision and lease internals | Step 3 |
+| Figure 144 | Diagram 144 | Rate Limiter complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 145 | Diagram 145 | Rate Limiter complete LLD service internals | Step 3 |
+| Figure 146 | Diagram 146 | Rate Limiter data stores and ownership | Step 3 |
+| Figure 91 | Diagram 91 | The RAG trust boundary | Step 3 |
+| Figure 92 | Diagram 92 | Draw ingestion | Step 3 |
+| Figure 93 | Diagram 93 | Draw grounded answer | Step 3 |
+| Figure 94 | Diagram 94 | Prompt-injection control flow | Step 3 |
+| Figure 95 | Diagram 95 | RAG high-level architecture | Step 2 |
+| Figure 96 | Diagram 96 | Retrieval and grounding internals | Step 3 |
+| Figure 147 | Diagram 147 | Enterprise RAG / Agents complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 148 | Diagram 148 | Enterprise RAG / Agents complete LLD service internals | Step 3 |
+| Figure 149 | Diagram 149 | Enterprise RAG / Agents data stores and ownership | Step 3 |
+| Figure 97 | Diagram 97 | The device retry and ordering path | Step 3 |
+| Figure 98 | Diagram 98 | Architecture | Step 2 |
+| Figure 99 | Diagram 99 | IoT high-level architecture | Step 2 |
+| Figure 100 | Diagram 100 | Telemetry validation internals | Step 3 |
+| Figure 150 | Diagram 150 | IoT Telemetry complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 151 | Diagram 151 | IoT Telemetry complete LLD service internals | Step 3 |
+| Figure 152 | Diagram 152 | IoT Telemetry data stores and ownership | Step 3 |
+| Figure 101 | Diagram 101 | Notification intent and delivery entities | Step 3 |
+| Figure 102 | Diagram 102 | Architecture | Step 2 |
+| Figure 103 | Diagram 103 | Notifications high-level architecture | Step 2 |
+| Figure 104 | Diagram 104 | Delivery orchestration internals | Step 3 |
+| Figure 153 | Diagram 153 | Notification System complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 154 | Diagram 154 | Notification System complete LLD service internals | Step 3 |
+| Figure 155 | Diagram 155 | Notification System data stores and ownership | Step 3 |
+| Figure 105 | Diagram 105 | Per-conversation ordering | Step 3 |
+| Figure 106 | Diagram 106 | Architecture | Step 2 |
+| Figure 107 | Diagram 107 | Chat high-level architecture | Step 2 |
+| Figure 108 | Diagram 108 | Online and offline fanout internals | Step 3 |
+| Figure 156 | Diagram 156 | Chat / Messaging complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 157 | Diagram 157 | Chat / Messaging complete LLD service internals | Step 3 |
+| Figure 158 | Diagram 158 | Chat / Messaging data stores and ownership | Step 3 |
+| Figure 109 | Diagram 109 | The workflow task lifecycle | Step 3 |
+| Figure 110 | Diagram 110 | Architecture | Step 2 |
+| Figure 111 | Diagram 111 | Workflow high-level architecture | Step 2 |
+| Figure 112 | Diagram 112 | Task lease and retry internals | Step 3 |
+| Figure 159 | Diagram 159 | Job / Workflow System complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 160 | Diagram 160 | Job / Workflow System complete LLD service internals | Step 3 |
+| Figure 161 | Diagram 161 | Job / Workflow System data stores and ownership | Step 3 |
+| Figure 113 | Diagram 113 | Training and serving consistency | Step 3 |
+| Figure 114 | Diagram 114 | Architecture | Step 2 |
+| Figure 115 | Diagram 115 | Feature Store high-level architecture | Step 2 |
+| Figure 116 | Diagram 116 | Versioned feature-serving internals | Step 3 |
+| Figure 162 | Diagram 162 | Feature Store / Model Serving complete HLD with web servers DB cache and queues | Step 2 |
+| Figure 163 | Diagram 163 | Feature Store / Model Serving complete LLD service internals | Step 3 |
+| Figure 164 | Diagram 164 | Feature Store / Model Serving data stores and ownership | Step 3 |
 
 ### How to present a numbered figure in the interview
 
@@ -1196,6 +1222,175 @@ While drawing say: “Postgres owns spot and session state; projections may lag;
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Parking Lot
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 117: Diagram 117 — Parking Lot complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Parking Lot blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 117 / Diagram 117.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Driver app, gate kiosk, operator console"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Parking Session Service, Payment Service, Occupancy Service"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres (spots, sessions) + replicas")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: Stripe/payment, gate controllers, spot sensors"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 118: Diagram 118 — Parking Lot complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Parking Lot service: API handlers, authz, domain rules (Atomic spot claim, session lifecycle, payment attempts, rate plans), repositories to cache/DB (spots, sessions, payments, rate_plans), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 118 / Diagram 118.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Parking Lot core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("spots, sessions, payments, rate_plans")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 119: Diagram 119 — Parking Lot data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Parking Lot: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 119 / Diagram 119.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres (spots, sessions) + replicas")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Parking Session Service, Payment Service, Occupancy Service"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Parking Lot:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 2. Car Rental — full progressive interview
 
 ### Beat 1 — Frame the product
@@ -1737,6 +1932,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Car Rental
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 120: Diagram 120 — Car Rental complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Car Rental blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 120 / Diagram 120.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Customer web/mobile, branch tablet, fleet ops"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Search Service, Booking Service, Fleet Assignment Service, Billing"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres (reservations, vehicles) + Elasticsearch for search")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: payments, maps, insurance partners"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 121: Diagram 121 — Car Rental complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Car Rental service: API handlers, authz, domain rules (class inventory holds, date-range exclusion, vehicle assignment), repositories to cache/DB (vehicles, reservations, holds, branches), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 121 / Diagram 121.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Car Rental core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("vehicles, reservations, holds, branches")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 122: Diagram 122 — Car Rental data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Car Rental: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 122 / Diagram 122.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres (reservations, vehicles) + Elasticsearch for search")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Search Service, Booking Service, Fleet Assignment Service, Billing"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Car Rental:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 3. Metrics Logging and Aggregation — full progressive interview
 
 ### Beat 1 — Clarify the product
@@ -2233,6 +2597,175 @@ While drawing say: “This is the component boundary I would test under concurre
 - Cardinality and lag as operational risks
 
 ---
+
+
+---
+
+## End-of-problem architecture package — Metrics Platform
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 123: Diagram 123 — Metrics Platform complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Metrics Platform blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 123 / Diagram 123.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["SDK agents, dashboards, alert UI"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Ingest Gateway, Stream Processor, Query API, Alert Engine"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Kafka + TSDB/ClickHouse + object store for raw/cold")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: PagerDuty/Slack, identity provider"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 124: Diagram 124 — Metrics Platform complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Metrics Platform service: API handlers, authz, domain rules (series keys, rollups, late-data windows, query fan-out), repositories to cache/DB (metric_points, rollups, alert_rules), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 124 / Diagram 124.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Metrics Platform core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("metric_points, rollups, alert_rules")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 125: Diagram 125 — Metrics Platform data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Metrics Platform: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 125 / Diagram 125.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Kafka + TSDB/ClickHouse + object store for raw/cold")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Ingest Gateway, Stream Processor, Query API, Alert Engine"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Metrics Platform:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
 
 ## 4. Pastebin / Viral Text — full progressive interview
 
@@ -2743,6 +3276,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Pastebin
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 126: Diagram 126 — Pastebin complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Pastebin blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 126 / Diagram 126.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Browser, API clients, crawlers"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Paste API, ID Service, View Counter Service"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres metadata + S3 bodies + Redis hot cache")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: CDN purge, abuse/moderation tools"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 127: Diagram 127 — Pastebin complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Pastebin service: API handlers, authz, domain rules (short-code allocation, cache stampede control, viral reads), repositories to cache/DB (pastes, users, view_counts), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 127 / Diagram 127.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Pastebin core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("pastes, users, view_counts")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 128: Diagram 128 — Pastebin data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Pastebin: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 128 / Diagram 128.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres metadata + S3 bodies + Redis hot cache")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Paste API, ID Service, View Counter Service"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Pastebin:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 5. Elevator OOD — full progressive interview
 
 ### Beat 1 — Clarify the boundary
@@ -3246,6 +3948,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Elevator Control
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 129: Diagram 129 — Elevator Control complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Elevator Control blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 129 / Diagram 129.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Hall panels, cabin panels, building ops UI"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Elevator Controller Service, Dispatcher, Telemetry Gateway"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres config/audit + Redis live car state")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: cabin firmware / PLC interfaces"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 130: Diagram 130 — Elevator Control complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Elevator Control service: API handlers, authz, domain rules (LOOK/SCAN scheduling, request queues, car state machines), repositories to cache/DB (buildings, cars, hall_calls, cabin_calls), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 130 / Diagram 130.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Elevator Control core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("buildings, cars, hall_calls, cabin_calls")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 131: Diagram 131 — Elevator Control data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Elevator Control: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 131 / Diagram 131.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres config/audit + Redis live car state")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Elevator Controller Service, Dispatcher, Telemetry Gateway"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Elevator Control:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 6. Ticket / Event Booking — condensed progressive interview
 
 ### Beat 1 — Clarify inventory
@@ -3545,6 +4416,175 @@ While drawing say: “This is the component boundary I would test under concurre
 - Spike-control trade-off
 
 ---
+
+
+---
+
+## End-of-problem architecture package — Ticket Booking
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 132: Diagram 132 — Ticket Booking complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Ticket Booking blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 132 / Diagram 132.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Fan mobile/web, box office, promoter console"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Catalog, Hold Service, Checkout, Payment Orchestrator"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres seat inventory + Redis holds")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: payment provider, email/SMS"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 133: Diagram 133 — Ticket Booking complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Ticket Booking service: API handlers, authz, domain rules (seat hold CAS, checkout, sold transition), repositories to cache/DB (events, seats, holds, orders), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 133 / Diagram 133.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Ticket Booking core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("events, seats, holds, orders")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 134: Diagram 134 — Ticket Booking data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Ticket Booking: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 134 / Diagram 134.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres seat inventory + Redis holds")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Catalog, Hold Service, Checkout, Payment Orchestrator"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Ticket Booking:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
 
 ## 7. Ride-Sharing — condensed progressive interview
 
@@ -3852,6 +4892,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Ride Sharing
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 135: Diagram 135 — Ride Sharing complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Ride Sharing blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 135 / Diagram 135.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Rider app, driver app, ops console"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Trip Service, Matching, Location, Pricing, Payments"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres trips + Redis GEO driver index")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: maps/ETA, payments, push notifications"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 136: Diagram 136 — Ride Sharing complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Ride Sharing service: API handlers, authz, domain rules (matching, trip CAS assignment, location freshness), repositories to cache/DB (trips, drivers, offers, payments), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 136 / Diagram 136.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Ride Sharing core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("trips, drivers, offers, payments")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 137: Diagram 137 — Ride Sharing data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Ride Sharing: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 137 / Diagram 137.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres trips + Redis GEO driver index")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Trip Service, Matching, Location, Pricing, Payments"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Ride Sharing:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 8. Dropbox-like File Storage — condensed progressive interview
 
 ### Beat 1 — Scope
@@ -4156,6 +5365,175 @@ While drawing say: “This is the component boundary I would test under concurre
 - Conflict policy
 
 ---
+
+
+---
+
+## End-of-problem architecture package — Dropbox-like Storage
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 138: Diagram 138 — Dropbox-like Storage complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Dropbox-like Storage blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 138 / Diagram 138.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Desktop/mobile sync clients, web UI"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Metadata Service, Upload/Block Service, Sharing Service"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres metadata + S3 block store + Redis")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: identity, notification, preview generators"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 139: Diagram 139 — Dropbox-like Storage complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Dropbox-like Storage service: API handlers, authz, domain rules (chunked upload, versioning, ACL sharing), repositories to cache/DB (files, blocks, versions, shares), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 139 / Diagram 139.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Dropbox-like Storage core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("files, blocks, versions, shares")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 140: Diagram 140 — Dropbox-like Storage data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Dropbox-like Storage: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 140 / Diagram 140.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres metadata + S3 block store + Redis")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Metadata Service, Upload/Block Service, Sharing Service"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Dropbox-like Storage:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
 
 ## 9. URL Shortener — condensed progressive interview
 
@@ -4466,6 +5844,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — URL Shortener
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 141: Diagram 141 — URL Shortener complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full URL Shortener blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 141 / Diagram 141.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Browser, mobile, API partners"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Shorten API, Redirect API, Analytics Service"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres mappings + Redis redirect cache")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: CDN, abuse detection"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 142: Diagram 142 — URL Shortener complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core URL Shortener service: API handlers, authz, domain rules (ID/hash generation, redirect hot path), repositories to cache/DB (urls, users, click_events), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 142 / Diagram 142.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "URL Shortener core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("urls, users, click_events")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 143: Diagram 143 — URL Shortener data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for URL Shortener: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 143 / Diagram 143.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres mappings + Redis redirect cache")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Shorten API, Redirect API, Analytics Service"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for URL Shortener:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 10. Rate Limiter / Hit Counter — condensed progressive interview
 
 ### Beat 1 — Clarify policy
@@ -4748,6 +6295,175 @@ While drawing say: “This is the component boundary I would test under concurre
 - Failure contract
 
 ---
+
+
+---
+
+## End-of-problem architecture package — Rate Limiter
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 144: Diagram 144 — Rate Limiter complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Rate Limiter blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 144 / Diagram 144.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Any client hitting protected APIs"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["API Gateway + Rate Limit Service + Hit Counter"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Redis counters/tokens + Postgres policy config")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: identity provider, edge PoPs"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 145: Diagram 145 — Rate Limiter complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Rate Limiter service: API handlers, authz, domain rules (token bucket / sliding window, local+global limits), repositories to cache/DB (policies, counters, leases), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 145 / Diagram 145.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Rate Limiter core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("policies, counters, leases")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 146: Diagram 146 — Rate Limiter data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Rate Limiter: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 146 / Diagram 146.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Redis counters/tokens + Postgres policy config")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["API Gateway + Rate Limit Service + Hit Counter"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Rate Limiter:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
 
 ## 11. Enterprise RAG / Agent Platform — condensed progressive interview
 
@@ -5057,6 +6773,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Enterprise RAG / Agents
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 147: Diagram 147 — Enterprise RAG / Agents complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Enterprise RAG / Agents blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 147 / Diagram 147.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Employee chat UI, admin console"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Answer API, Ingest Pipeline, Retrieval, Agent Orchestrator"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Vector DB + Postgres metadata/ACL + object store docs")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: LLM provider, IdP/SSO, connectors (Drive/SharePoint)"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 148: Diagram 148 — Enterprise RAG / Agents complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Enterprise RAG / Agents service: API handlers, authz, domain rules (ACL-filtered retrieval, grounded generation, tool calls), repositories to cache/DB (tenants, documents, chunks, conversations, citations), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 148 / Diagram 148.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Enterprise RAG / Agents core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("tenants, documents, chunks, conversations, citations")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 149: Diagram 149 — Enterprise RAG / Agents data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Enterprise RAG / Agents: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 149 / Diagram 149.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Vector DB + Postgres metadata/ACL + object store docs")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Answer API, Ingest Pipeline, Retrieval, Agent Orchestrator"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Enterprise RAG / Agents:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 12. IoT / Telemetry Ingestion — shorter progressive sketch
 
 ### Beat 1 — Clarify devices
@@ -5266,6 +7151,175 @@ While drawing say: “This is the component boundary I would test under concurre
 - Late-data distinction
 
 ---
+
+
+---
+
+## End-of-problem architecture package — IoT Telemetry
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 150: Diagram 150 — IoT Telemetry complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full IoT Telemetry blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 150 / Diagram 150.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Devices, device twin UI, ops dashboards"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Device Gateway, Ingest, Twin Service, Command Service"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Kafka + TSDB + Postgres device registry")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: firmware OTA, alerting"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 151: Diagram 151 — IoT Telemetry complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core IoT Telemetry service: API handlers, authz, domain rules (at-least-once ingest, device twin, command ACK), repositories to cache/DB (devices, telemetry, twins, commands), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 151 / Diagram 151.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "IoT Telemetry core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("devices, telemetry, twins, commands")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 152: Diagram 152 — IoT Telemetry data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for IoT Telemetry: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 152 / Diagram 152.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Kafka + TSDB + Postgres device registry")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Device Gateway, Ingest, Twin Service, Command Service"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for IoT Telemetry:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
 
 ## 13. Notification System — shorter progressive sketch
 
@@ -5486,6 +7540,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Notification System
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 153: Diagram 153 — Notification System complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Notification System blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 153 / Diagram 153.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Product services, user preference UI"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Notification API, Preference Service, Channel Routers"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres templates/prefs + Kafka by channel + Redis dedupe")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: SES/Twilio/FCM/APNs"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 154: Diagram 154 — Notification System complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Notification System service: API handlers, authz, domain rules (fan-out, quiet hours, provider failover), repositories to cache/DB (notifications, preferences, deliveries), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 154 / Diagram 154.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Notification System core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("notifications, preferences, deliveries")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 155: Diagram 155 — Notification System data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Notification System: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 155 / Diagram 155.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres templates/prefs + Kafka by channel + Redis dedupe")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Notification API, Preference Service, Channel Routers"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Notification System:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 14. Chat / Messaging — shorter progressive sketch
 
 ### Beat 1 — Scope
@@ -5701,6 +7924,175 @@ While drawing say: “This is the component boundary I would test under concurre
 
 ---
 
+
+---
+
+## End-of-problem architecture package — Chat / Messaging
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 156: Diagram 156 — Chat / Messaging complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Chat / Messaging blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 156 / Diagram 156.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Mobile/web chat clients"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Chat API, Presence, Media, Push Fanout"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Cassandra/Postgres messages + Redis presence + S3 media")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: APNs/FCM, virus scan"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 157: Diagram 157 — Chat / Messaging complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Chat / Messaging service: API handlers, authz, domain rules (per-conversation ordering, online/offline, fanout), repositories to cache/DB (conversations, messages, memberships, devices), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 157 / Diagram 157.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Chat / Messaging core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("conversations, messages, memberships, devices")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 158: Diagram 158 — Chat / Messaging data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Chat / Messaging: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 158 / Diagram 158.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Cassandra/Postgres messages + Redis presence + S3 media")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Chat API, Presence, Media, Push Fanout"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Chat / Messaging:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
+
 ## 15. Distributed Job / Workflow System — shorter progressive sketch
 
 ### Beat 1 — Scope
@@ -5911,6 +8303,175 @@ While drawing say: “This is the component boundary I would test under concurre
 - Crash invariant
 
 ---
+
+
+---
+
+## End-of-problem architecture package — Job / Workflow System
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 159: Diagram 159 — Job / Workflow System complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Job / Workflow System blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 159 / Diagram 159.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Internal services, admin UI, cron"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Job API, Scheduler, Worker Fleet, Workflow Engine"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Postgres jobs + Kafka/SQS queues + Redis leases")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: downstream task APIs"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 160: Diagram 160 — Job / Workflow System complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Job / Workflow System service: API handlers, authz, domain rules (leases, retries, idempotent tasks, DAG workflows), repositories to cache/DB (jobs, tasks, attempts, workflows), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 160 / Diagram 160.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Job / Workflow System core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("jobs, tasks, attempts, workflows")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 161: Diagram 161 — Job / Workflow System data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Job / Workflow System: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 161 / Diagram 161.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Postgres jobs + Kafka/SQS queues + Redis leases")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Job API, Scheduler, Worker Fleet, Workflow Engine"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Job / Workflow System:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
 
 ## 16. Feature Store / Model Serving — shorter progressive sketch
 
@@ -6125,6 +8686,175 @@ While drawing say: “This is the component boundary I would test under concurre
 - Drift observability
 
 ---
+
+
+---
+
+## End-of-problem architecture package — Feature Store / Model Serving
+
+
+### Why we explicitly show web servers, DB, cache, queues, and more
+
+In a real interview, a sparse diagram that only says “Service → DB” looks unfinished. Interviewers expect the standard tiers, even if some are simple in v1:
+
+| Tier | What to draw | Why it matters |
+|------|--------------|----------------|
+| Clients | web, mobile, kiosk, device, partner | Clarifies actors and protocols |
+| Edge | DNS, CDN, WAF | Caching static assets and edge protection |
+| Web / API tier | load balancer, API gateway, **web/API servers** | Stateless scale-out, TLS, auth, rate limits |
+| Application services | domain services | Business logic boundaries |
+| Data tier | **primary DB + replicas**, cache, object store | Source of truth vs acceleration vs blobs |
+| Async | **message queue + workers** | Bursts, retries, fan-out, long work |
+| External systems | payments, maps, LLM, SMS, etc. | Failure domains outside your control |
+| Observability | metrics, logs, traces | How you operate and debug |
+
+**Say this while drawing the end-state HLD:** “Even if v1 is one region and one primary database, I still draw the web tier, cache, replicas, and workers so we can talk about scale and failure without rewriting the diagram.”
+
+
+### Final HLD to leave on the board (Step 2 recap + Step 4)
+
+This is the complete high-level picture interviewers expect: **clients, edge, web servers, app services, cache, databases, queues, workers, external systems, and monitoring**.
+
+
+**Figure 162: Diagram 162 — Feature Store / Model Serving complete HLD with web servers DB cache and queues**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (final board) / Step 4 recap |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Full Feature Store / Model Serving blueprint including DNS/CDN, load balancer, API gateway, web/API servers, application services, Redis cache, primary DB/replicas, object store, message queue, workers, external dependencies, and observability. |
+| **How to use** | Say “as in Figure 162 / Diagram 162.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Clients["Clients"]
+    C["Training pipelines, online inference clients, ML ops UI"]
+  end
+  subgraph Edge["Edge / delivery"]
+    DNS["DNS"]
+    CDN["CDN / static assets"]
+    WAF["WAF / DDoS"]
+  end
+  subgraph Web["Web / API tier"]
+    LB["Load balancer"]
+    GW["API gateway / auth / rate limit"]
+    WS["Web / API servers (stateless)"]
+  end
+  subgraph App["Application services"]
+    S["Feature Registry, Offline Store jobs, Online Store, Model Server"]
+  end
+  subgraph Data["Data tier"]
+    Cache[("Redis / Memcached cache")]
+    DB[("Warehouse/offline + Redis/online features + model artifact store")]
+    Blob[("Object store S3 / GCS if needed")]
+  end
+  subgraph Async["Async / messaging"]
+    Q[["Message queue Kafka/SQS/Rabbit"]]
+    W["Background workers"]
+  end
+  subgraph Ops["Observability"]
+    M["Metrics, logs, traces, alerts"]
+  end
+  Ext["External systems: training cluster, experiment tracker"]
+
+  C --> DNS --> CDN
+  C --> WAF --> LB --> GW --> WS --> S
+  S --> Cache
+  S --> DB
+  S --> Blob
+  S --> Q
+  Q --> W
+  W --> DB
+  W --> Cache
+  W --> Ext
+  S --> Ext
+  WS --> M
+  S --> M
+  W --> M
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final LLD / components to leave on the board (Step 3)
+
+Open the critical service: handlers, auth middleware, domain logic, repositories, outbox, cache, DB, and workers.
+
+
+**Figure 163: Diagram 163 — Feature Store / Model Serving complete LLD service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Inside the core Feature Store / Model Serving service: API handlers, authz, domain rules (point-in-time correctness, online/offline parity, serving), repositories to cache/DB (entities, feature_views, feature_values, model_versions), transactional outbox, queue consumers, and external calls. |
+| **How to use** | Say “as in Figure 163 / Diagram 163.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart LR
+  subgraph "Feature Store / Model Serving core service LLD"
+    API["HTTP handlers / controllers"]
+    Auth["AuthZ middleware"]
+    Dom["Domain / use-case layer"]
+    Repo["Repositories"]
+    Out["Outbox / event publisher"]
+  end
+  API --> Auth --> Dom
+  Dom --> Repo
+  Dom --> Out
+  Repo --> Cache[("Cache")]
+  Repo --> DB[("entities, feature_views, feature_values, model_versions")]
+  Out --> Q[["Queue"]]
+  Q --> Worker["Worker processes"]
+  Worker --> DB
+  Worker --> Ext["External APIs"]
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+### Final data-plane sketch (tables / resources)
+
+
+**Figure 164: Diagram 164 — Feature Store / Model Serving data stores and ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Data-plane / ownership diagram |
+| **Details** | Shows which store owns what for Feature Store / Model Serving: transactional rows in the primary DB, hot keys in cache, async events on the queue, and any blob/search system. |
+| **How to use** | Say “as in Figure 164 / Diagram 164.” Walk left-to-right naming each tier. |
+
+```mermaid
+flowchart TB
+  subgraph Authoritative["Authoritative / transactional"]
+    DB[("Warehouse/offline + Redis/online features + model artifact store")]
+  end
+  subgraph Acceleration["Acceleration"]
+    Cache[("Redis / Memcached")]
+  end
+  subgraph AsyncStore["Async and derived"]
+    Q[["Message queue"]]
+    Proj["Projections / analytics / search"]
+  end
+  subgraph Blobs["Large objects if needed"]
+    S3[("Object store")]
+  end
+  WS["Web / API servers"] --> Svc["Feature Registry, Offline Store jobs, Online Store, Model Server"]
+  Svc --> DB
+  Svc --> Cache
+  Svc --> Q
+  Svc --> S3
+  Q --> W["Workers"]
+  W --> DB
+  W --> Proj
+  W --> Cache
+```
+
+While drawing say: “I am naming every tier so nothing important is invisible: edge, web tier, app tier, data tier, async tier, and ops.”
+
+
+**Close line for Feature Store / Model Serving:** “Web/API servers stay stateless; the DB owns the invariant; cache accelerates reads; queues absorb bursts and side effects; workers and monitoring make the system operable at the next scale curve.”
 
 ## Reference cheat sheet — not the interview script
 
