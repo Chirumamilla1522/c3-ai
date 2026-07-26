@@ -10,9 +10,140 @@ Do not memorize the final diagrams. Practice reaching them from requirements.
 
 The four steps are the primary clock. The progressive dialogue in every later section is how you execute them: ask one question at a time, earn each box, pause for feedback, and deepen only after the interviewer buys into the direction.
 
-Figures are named so you can say “as in Figure F1.HLD” while practicing.
+Figures are numbered as **Figure N: Diagram N — title**. Under each figure, a details table lists the interview step, diagram type, and how to use it. Say “as in Figure 22 / Diagram 22” while practicing.
 
-**Figure F0.1 — Four-step interview timeline (Step 1–4)**
+### Figure index (all diagrams)
+
+Use this list to jump by number. Every figure also has a details table with its interview step.
+
+| Figure | Diagram | Title | Interview step | Type |
+|------:|--------:|-------|----------------|------|
+| Figure 1 | Diagram 1 | Four-step interview timeline | Steps 1–4 | Flowchart |
+| Figure 2 | Diagram 2 | Scope board and requirement boundary | Step 1 | Scope / requirements diagram |
+| Figure 3 | Diagram 3 | Generic high-level design template | Step 2 | High-level design (HLD) box diagram |
+| Figure 4 | Diagram 4 | Generic service component deep dive | Step 3 | Low-level / component diagram (LLD) |
+| Figure 5 | Diagram 5 | Wrap-up checklist and next scale curve | Step 4 | Flowchart |
+| Figure 6 | Diagram 6 | The actors and driver journey | Step 1 | Scope / requirements diagram |
+| Figure 7 | Diagram 7 | The NFR board and consistency boundary | Step 1 | Scope / requirements diagram |
+| Figure 8 | Diagram 8 | The first partial parking ERD | Step 3 | Entity-relationship diagram (ERD) |
+| Figure 9 | Diagram 9 | The evolving ERD after adding the stay lifecycle | Step 3 | Entity-relationship diagram (ERD) |
+| Figure 10 | Diagram 10 | The minimum parking model | Step 3 | Entity-relationship diagram (ERD) |
+| Figure 11 | Diagram 11 | The compatibility ranking decision | Step 3 | Flowchart |
+| Figure 12 | Diagram 12 | The entry API sequence | Step 3 | Sequence diagram |
+| Figure 13 | Diagram 13 | The gate timeout and retry sequence | Step 3 | Sequence diagram |
+| Figure 14 | Diagram 14 | The payment entities added to the parking model | Step 3 | Entity-relationship diagram (ERD) |
+| Figure 15 | Diagram 15 | The last-spot sequence | Step 3 | Sequence diagram |
+| Figure 16 | Diagram 16 | Payment crash recovery with an outbox | Step 3 | Sequence diagram |
+| Figure 17 | Diagram 17 | Session and payment-aware transitions | Step 3 | State machine |
+| Figure 18 | Diagram 18 | The expiry and reconciliation worker boundary | Step 3 | Flowchart |
+| Figure 19 | Diagram 19 | Lot-based sharding at scale | Step 2 | Flowchart |
+| Figure 20 | Diagram 20 | Parking Lot high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 21 | Diagram 21 | Spot-claim service internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 22 | Diagram 22 | Parking Lot final earned HLD architecture | Step 2 | Flowchart |
+| Figure 23 | Diagram 23 | The customer journey and promise boundary | Step 1 | Scope / requirements diagram |
+| Figure 24 | Diagram 24 | The car-rental NFR split | Step 1 | Scope / requirements diagram |
+| Figure 25 | Diagram 25 | The inventory-model correction | Step 3 | Flowchart |
+| Figure 26 | Diagram 26 | Reservation promise versus physical allocation | Step 3 | Entity-relationship diagram (ERD) |
+| Figure 27 | Diagram 27 | The booking API decision path | Step 3 | Sequence diagram |
+| Figure 28 | Diagram 28 | Draw booking sequence | Step 3 | Sequence diagram |
+| Figure 29 | Diagram 29 | Pickup payment crash recovery | Step 3 | State machine |
+| Figure 30 | Diagram 30 | Regional search scaling without weakening booking | Step 3 | Flowchart |
+| Figure 31 | Diagram 31 | Draw earned architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 32 | Diagram 32 | Car Rental high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 33 | Diagram 33 | Reservation allocation internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 34 | Diagram 34 | The metrics actors and data journey | Step 1 | Scope / requirements diagram |
+| Figure 35 | Diagram 35 | The metrics NFR lanes | Step 1 | Scope / requirements diagram |
+| Figure 36 | Diagram 36 | The ingest API acknowledgment sequence | Step 3 | Sequence diagram |
+| Figure 37 | Diagram 37 | Synchronous acknowledgment and asynchronous processing | Step 3 | Flowchart |
+| Figure 38 | Diagram 38 | Late-data window correction | Step 3 | Flowchart |
+| Figure 39 | Diagram 39 | Query fan-out | Step 3 | Sequence diagram |
+| Figure 40 | Diagram 40 | The corrected storage tiers | Step 2 | Flowchart |
+| Figure 41 | Diagram 41 | Metrics high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 42 | Diagram 42 | Ingest and query engine internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 43 | Diagram 43 | The initial paste lifecycle | Step 3 | Flowchart |
+| Figure 44 | Diagram 44 | The Pastebin NFR board | Step 1 | Scope / requirements diagram |
+| Figure 45 | Diagram 45 | The partial metadata and body model | Step 3 | Entity-relationship diagram (ERD) |
+| Figure 46 | Diagram 46 | The corrected publish states | Step 3 | State machine |
+| Figure 47 | Diagram 47 | Draw the write path | Step 3 | Sequence diagram |
+| Figure 48 | Diagram 48 | Earn read architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 49 | Diagram 49 | Draw stampede control | Step 3 | Sequence diagram |
+| Figure 50 | Diagram 50 | Logical expiry and physical cleanup | Step 3 | Sequence diagram |
+| Figure 51 | Diagram 51 | Pastebin high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 52 | Diagram 52 | Paste publish internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 53 | Diagram 53 | The elevator actors and control boundary | Step 1 | Flowchart |
+| Figure 54 | Diagram 54 | The elevator NFR trade-off board | Step 1 | Scope / requirements diagram |
+| Figure 55 | Diagram 55 | Draw the class model | Step 3 | Flowchart |
+| Figure 56 | Diagram 56 | The ownership correction | Step 3 | Sequence diagram |
+| Figure 57 | Diagram 57 | State machine | Step 3 | State machine |
+| Figure 58 | Diagram 58 | Draw runtime interaction | Step 3 | Sequence diagram |
+| Figure 59 | Diagram 59 | Car-failure recovery | Step 3 | Flowchart |
+| Figure 60 | Diagram 60 | Elevator high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 61 | Diagram 61 | Car-controller modules and state | Step 3 | Low-level / component diagram (LLD) |
+| Figure 62 | Diagram 62 | Ticketing discovery versus allocation | Step 3 | Flowchart |
+| Figure 63 | Diagram 63 | Draw lifecycle | Step 3 | State machine |
+| Figure 64 | Diagram 64 | Ticket payment crash recovery | Step 3 | Sequence diagram |
+| Figure 65 | Diagram 65 | Draw earned architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 66 | Diagram 66 | Tickets high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 67 | Diagram 67 | Seat-hold allocation internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 68 | Diagram 68 | Ride-sharing state separation | Step 3 | Flowchart |
+| Figure 69 | Diagram 69 | Draw match sequence | Step 3 | Sequence diagram |
+| Figure 70 | Diagram 70 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 71 | Diagram 71 | Assignment loss and recovery | Step 3 | State machine |
+| Figure 72 | Diagram 72 | Rides high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 73 | Diagram 73 | Matching and assignment internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 74 | Diagram 74 | Dropbox metadata and content ownership | Step 3 | Flowchart |
+| Figure 75 | Diagram 75 | Draw upload | Step 3 | Sequence diagram |
+| Figure 76 | Diagram 76 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 77 | Diagram 77 | Sharing revocation propagation | Step 3 | Sequence diagram |
+| Figure 78 | Diagram 78 | Dropbox high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 79 | Diagram 79 | Revision commit and sync internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 80 | Diagram 80 | URL-shortener latency lanes | Step 3 | Flowchart |
+| Figure 81 | Diagram 81 | Draw redirect path | Step 3 | Sequence diagram |
+| Figure 82 | Diagram 82 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 83 | Diagram 83 | Viral-link disable propagation | Step 3 | Sequence diagram |
+| Figure 84 | Diagram 84 | URL Shortener high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 85 | Diagram 85 | Hash and ID generation internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 86 | Diagram 86 | The rate-limiter decision budget | Step 3 | Flowchart |
+| Figure 87 | Diagram 87 | Draw local/global path | Step 3 | Flowchart |
+| Figure 88 | Diagram 88 | Lease failure and epoch recovery | Step 3 | State machine |
+| Figure 89 | Diagram 89 | Rate Limiter high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 90 | Diagram 90 | Quota decision and lease internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 91 | Diagram 91 | The RAG trust boundary | Step 3 | Flowchart |
+| Figure 92 | Diagram 92 | Draw ingestion | Step 3 | Flowchart |
+| Figure 93 | Diagram 93 | Draw grounded answer | Step 3 | Sequence diagram |
+| Figure 94 | Diagram 94 | Prompt-injection control flow | Step 3 | Flowchart |
+| Figure 95 | Diagram 95 | RAG high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 96 | Diagram 96 | Retrieval and grounding internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 97 | Diagram 97 | The device retry and ordering path | Step 3 | Sequence diagram |
+| Figure 98 | Diagram 98 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 99 | Diagram 99 | IoT high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 100 | Diagram 100 | Telemetry validation internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 101 | Diagram 101 | Notification intent and delivery entities | Step 3 | Entity-relationship diagram (ERD) |
+| Figure 102 | Diagram 102 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 103 | Diagram 103 | Notifications high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 104 | Diagram 104 | Delivery orchestration internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 105 | Diagram 105 | Per-conversation ordering | Step 3 | Sequence diagram |
+| Figure 106 | Diagram 106 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 107 | Diagram 107 | Chat high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 108 | Diagram 108 | Online and offline fanout internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 109 | Diagram 109 | The workflow task lifecycle | Step 3 | State machine |
+| Figure 110 | Diagram 110 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 111 | Diagram 111 | Workflow high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 112 | Diagram 112 | Task lease and retry internals | Step 3 | Low-level / component diagram (LLD) |
+| Figure 113 | Diagram 113 | Training and serving consistency | Step 3 | Flowchart |
+| Figure 114 | Diagram 114 | Architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 115 | Diagram 115 | Feature Store high-level architecture | Step 2 | High-level design (HLD) box diagram |
+| Figure 116 | Diagram 116 | Versioned feature-serving internals | Step 3 | Low-level / component diagram (LLD) |
+
+
+**Figure 1: Diagram 1 — Four-step interview timeline**
+
+| | |
+|:---|:---|
+| **Interview step** | Steps 1–4 — full interview clock |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Four-step interview timeline. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1–4 goal. |
 
 ```mermaid
 flowchart LR
@@ -25,6 +156,24 @@ flowchart LR
 ```
 
 While drawing say: “I’ll first agree on scope, then propose a blueprint, deepen the most important component, and reserve time to close.”
+
+
+### How to present a numbered figure in the interview
+
+1. **Name it:** “I’ll draw Figure N / Diagram N next.”
+2. **State the step:** “This is a Step 2 high-level buy-in diagram” or “This is a Step 3 deep dive.”
+3. **Narrate before polishing:** say the responsibility of each box and what travels on each arrow.
+4. **Ask for buy-in:** “Does this match the scope so far, or should we change a box?”
+5. **Only then deepen:** move to the next figure only after the interviewer agrees or redirects.
+
+### Mapping beats to the four steps
+
+| Interview phase | What you produce | Typical figures |
+|-----------------|------------------|-----------------|
+| Step 1 Scope | Actors, journeys, NFRs, out-of-scope | Journey boards, NFR boards |
+| Step 2 HLD | End-to-end box diagram + use case | `… HLD …`, architecture plates |
+| Step 3 Deep dive | One critical component | ERD, sequence, state, LLD internals |
+| Step 4 Wrap | Bottlenecks, failures, 10× scale | Scale, failure, wrap checklist |
 
 ### Step 1 — Understand the problem and establish design scope (3–10 min)
 
@@ -53,7 +202,14 @@ Capture assumptions, not fake precision. A useful board has six lanes: scale, la
 
 **Draw now:** turn the prompt into a shared scope board.
 
-**Figure F0.2 — Scope board and requirement boundary (Step 1)**
+**Figure 2: Diagram 2 — Scope board and requirement boundary**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: Scope board and requirement boundary. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart TB
@@ -83,7 +239,14 @@ Offer an initial blueprint, not a finished answer. Treat the interviewer as a te
 - State alternatives briefly: “Option A favors ___; option B favors ___. Given our requirements I recommend A.”
 - Pause before deepening: “Is this the right high-level shape, and which component would you like me to explore?”
 
-**Figure F0.3 — Generic high-level design template (Step 2)**
+**Figure 3: Diagram 3 — Generic high-level design template**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Generic high-level design template. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -115,7 +278,14 @@ The goals and HLD are already agreed. Use feedback to prioritize one or two crit
 - Discuss concurrency, retries, partial failure, backpressure, recovery, observability, and tests around the invariant.
 - Keep time: do not disappear into classes, schema columns, or protocol trivia that does not defend a requirement.
 
-**Figure F0.4 — Generic service component deep dive (Step 3)**
+**Figure 4: Diagram 4 — Generic service component deep dive**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Generic service component deep dive. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -145,7 +315,14 @@ Never say the design is perfect. Name bottlenecks and improvements, recap the de
 - Explain the next scale step: partitioning, regionalization, caching, load shedding, or isolation—and what complexity it buys.
 - Offer refinements if more time: deeper threat model, cost model, schema, test plan, disaster recovery, or alternative design.
 
-**Figure F0.5 — Wrap-up checklist and next scale curve (Step 4)**
+**Figure 5: Diagram 5 — Wrap-up checklist and next scale curve**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 4 — Wrap up |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Wrap-up checklist and next scale curve. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 4 goal. |
 
 ```mermaid
 flowchart LR
@@ -242,7 +419,14 @@ flowchart LR
 
 **Draw now:** the actors and driver journey.
 
-**Figure F1.01 — The actors and driver journey (Step 1)**
+**Figure 6: Diagram 6 — The actors and driver journey**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The actors and driver journey. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -321,7 +505,14 @@ While drawing say: “The driver owns the critical journey; operator configurati
 
 **Draw now:** the NFR board and consistency boundary.
 
-**Figure F1.02 — The NFR board and consistency boundary (Step 1)**
+**Figure 7: Diagram 7 — The NFR board and consistency boundary**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The NFR board and consistency boundary. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -365,7 +556,14 @@ While drawing say: “Latency cannot weaken the one-spot claim; only the derived
 
 **Draw now:** the first partial parking ERD.
 
-**Figure F1.03 — The first partial parking ERD (Step 3)**
+**Figure 8: Diagram 8 — The first partial parking ERD**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Entity-relationship diagram (ERD) |
+| **Details** | Visual board update for: The first partial parking ERD. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 erDiagram
@@ -415,7 +613,14 @@ While drawing say: “This is intentionally incomplete: Spot is already the lock
 
 **Draw now:** the evolving ERD after adding the stay lifecycle.
 
-**Figure F1.04 — The evolving ERD after adding the stay lifecycle (Step 3)**
+**Figure 9: Diagram 9 — The evolving ERD after adding the stay lifecycle**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Entity-relationship diagram (ERD) |
+| **Details** | Visual board update for: The evolving ERD after adding the stay lifecycle. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 erDiagram
@@ -459,7 +664,14 @@ While drawing say: “Session is historical truth, while Spot remains the curren
 
 **Draw now:** the minimum parking model.
 
-**Figure F1.05 — The minimum parking model (Step 3)**
+**Figure 10: Diagram 10 — The minimum parking model**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Entity-relationship diagram (ERD) |
+| **Details** | Visual board update for: The minimum parking model. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 erDiagram
@@ -504,7 +716,14 @@ While drawing say: “The mutable scarcity boundary is one Spot; Session preserv
 
 **Draw now:** the compatibility ranking decision.
 
-**Figure F1.06 — The compatibility ranking decision (Step 3)**
+**Figure 11: Diagram 11 — The compatibility ranking decision**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The compatibility ranking decision. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart TD
@@ -539,7 +758,14 @@ While drawing say: “Ranking preserves flexible inventory, but the final row lo
 
 **Draw now:** the entry API sequence.
 
-**Figure F1.07 — The entry API sequence (Step 3)**
+**Figure 12: Diagram 12 — The entry API sequence**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: The entry API sequence. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -571,7 +797,14 @@ While drawing say: “The response is produced by the same transaction that spen
 
 **Draw now:** the gate timeout and retry sequence.
 
-**Figure F1.08 — The gate timeout and retry sequence (Step 3)**
+**Figure 13: Diagram 13 — The gate timeout and retry sequence**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: The gate timeout and retry sequence. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -619,7 +852,14 @@ While drawing say: “A retry observes the first operation; it never starts a se
 
 **Draw now:** the payment entities added to the parking model.
 
-**Figure F1.09 — The payment entities added to the parking model (Step 3)**
+**Figure 14: Diagram 14 — The payment entities added to the parking model**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Entity-relationship diagram (ERD) |
+| **Details** | Visual board update for: The payment entities added to the parking model. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 erDiagram
@@ -665,7 +905,14 @@ While drawing say: “Immutable rate versions reproduce the quote, and each prov
 
 **Draw now:** the last-spot sequence.
 
-**Figure F1.10 — The last-spot sequence (Step 3)**
+**Figure 15: Diagram 15 — The last-spot sequence**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: The last-spot sequence. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -721,7 +968,14 @@ While drawing say: “The loser does not trust its old read; it performs a fresh
 
 **Draw now:** payment crash recovery with an outbox.
 
-**Figure F1.11 — Payment crash recovery with an outbox (Step 3)**
+**Figure 16: Diagram 16 — Payment crash recovery with an outbox**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Payment crash recovery with an outbox. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -744,7 +998,14 @@ While drawing say: “Provider idempotency prevents double charge, while webhook
 
 **Draw now:** session and payment-aware transitions.
 
-**Figure F1.12 — Session and payment-aware transitions (Step 3)**
+**Figure 17: Diagram 17 — Session and payment-aware transitions**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: Session and payment-aware transitions. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -769,7 +1030,14 @@ While drawing say: “Only conditional transitions are legal; stale commands rec
 
 **Draw now:** the expiry and reconciliation worker boundary.
 
-**Figure F1.13 — The expiry and reconciliation worker boundary (Step 3)**
+**Figure 18: Diagram 18 — The expiry and reconciliation worker boundary**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The expiry and reconciliation worker boundary. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -800,7 +1068,14 @@ While drawing say: “Drive-up sessions do not expire; only stale operations and
 
 **Draw now:** lot-based sharding at scale.
 
-**Figure F1.14 — Lot-based sharding at scale (Step 2)**
+**Figure 19: Diagram 19 — Lot-based sharding at scale**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Lot-based sharding at scale. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -821,7 +1096,14 @@ While drawing say: “Every garage has one write home, while global views are de
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F1.HLD — Parking Lot high-level architecture (Step 2)**
+**Figure 20: Diagram 20 — Parking Lot high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Parking Lot high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -844,7 +1126,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F1.LLD — Spot-claim service internals (Step 3)**
+**Figure 21: Diagram 21 — Spot-claim service internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Spot-claim service internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -871,7 +1160,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** only boxes justified by prior beats.
 
-**Figure F1.15 — Only boxes justified by prior beats (Step 2)**
+**Figure 22: Diagram 22 — Parking Lot final earned HLD architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in (earned after deep dive; used again in Step 4 recap) |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | End-to-end Parking Lot blueprint: clients → gateway → parking service → Redis/Postgres → workers → payments. Only includes boxes justified by earlier beats (assignment, holds, expiry, analytics). |
+| **How to use** | Say “as in Figure 22 / Diagram 22.” Recap the synchronous claim path vs async occupancy/payment work, then ask which box to deepen or improve. |
 
 ```mermaid
 flowchart LR
@@ -920,7 +1216,14 @@ While drawing say: “Postgres owns spot and session state; projections may lag;
 
 **Draw now:** the customer journey and promise boundary.
 
-**Figure F2.01 — The customer journey and promise boundary (Step 1)**
+**Figure 23: Diagram 23 — The customer journey and promise boundary**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The customer journey and promise boundary. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -984,7 +1287,14 @@ While drawing say: “The reservation promises a class first; a VIN enters only 
 
 **Draw now:** the car-rental NFR split.
 
-**Figure F2.02 — The car-rental NFR split (Step 1)**
+**Figure 24: Diagram 24 — The car-rental NFR split**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The car-rental NFR split. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -1052,7 +1362,14 @@ While drawing say: “Search optimizes discovery, but only booking can spend inv
 
 **Draw now:** the inventory-model correction.
 
-**Figure F2.03 — The inventory-model correction (Step 3)**
+**Figure 25: Diagram 25 — The inventory-model correction**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The inventory-model correction. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -1069,7 +1386,14 @@ While drawing say: “Daily buckets turn an expensive overlap calculation into f
 
 **Draw now:** reservation promise versus physical allocation.
 
-**Figure F2.04 — Reservation promise versus physical allocation (Step 3)**
+**Figure 26: Diagram 26 — Reservation promise versus physical allocation**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Entity-relationship diagram (ERD) |
+| **Details** | Visual board update for: Reservation promise versus physical allocation. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 erDiagram
@@ -1126,7 +1450,14 @@ While drawing say: “InventoryDay protects promises; Vehicle represents operati
 
 **Draw now:** the booking API decision path.
 
-**Figure F2.05 — The booking API decision path (Step 3)**
+**Figure 27: Diagram 27 — The booking API decision path**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: The booking API decision path. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -1159,7 +1490,14 @@ While drawing say: “A valid quote freezes price inputs, not availability; inve
 
 ### Beat 14 — Draw booking sequence
 
-**Figure F2.06 — Draw booking sequence (Step 3)**
+**Figure 28: Diagram 28 — Draw booking sequence**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw booking sequence. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -1229,7 +1567,14 @@ While drawing say: “Search is advisory; only this transaction spends inventory
 
 **Draw now:** pickup payment crash recovery.
 
-**Figure F2.07 — Pickup payment crash recovery (Step 3)**
+**Figure 29: Diagram 29 — Pickup payment crash recovery**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: Pickup payment crash recovery. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -1260,7 +1605,14 @@ While drawing say: “The durable pickup operation makes ambiguous payment a res
 
 **Draw now:** regional search scaling without weakening booking.
 
-**Figure F2.08 — Regional search scaling without weakening booking (Step 3)**
+**Figure 30: Diagram 30 — Regional search scaling without weakening booking**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Regional search scaling without weakening booking. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -1279,7 +1631,14 @@ While drawing say: “Indexes scale independently by region, while every confirm
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F2.09 — Draw earned architecture (Step 2)**
+**Figure 31: Diagram 31 — Draw earned architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Draw earned architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -1306,7 +1665,14 @@ While drawing say: “The index answers discovery; InventoryDay spends promises;
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F2.HLD — Car Rental high-level architecture (Step 2)**
+**Figure 32: Diagram 32 — Car Rental high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Car Rental high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -1329,7 +1695,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F2.LLD — Reservation allocation internals (Step 3)**
+**Figure 33: Diagram 33 — Reservation allocation internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Reservation allocation internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -1384,7 +1757,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** the metrics actors and data journey.
 
-**Figure F3.01 — The metrics actors and data journey (Step 1)**
+**Figure 34: Diagram 34 — The metrics actors and data journey**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The metrics actors and data journey. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -1449,7 +1829,14 @@ While drawing say: “Agents produce, dashboards query, and alerting consumes th
 
 **Draw now:** the metrics NFR lanes.
 
-**Figure F3.02 — The metrics NFR lanes (Step 1)**
+**Figure 35: Diagram 35 — The metrics NFR lanes**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The metrics NFR lanes. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -1504,7 +1891,14 @@ While drawing say: “The durable append is shared, but alerting and dashboard f
 
 **Draw now:** the ingest API acknowledgment sequence.
 
-**Figure F3.03 — The ingest API acknowledgment sequence (Step 3)**
+**Figure 36: Diagram 36 — The ingest API acknowledgment sequence**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: The ingest API acknowledgment sequence. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -1542,7 +1936,14 @@ While drawing say: “The client hears success only after a replayable record ex
 
 **Draw now:** synchronous acknowledgment and asynchronous processing.
 
-**Figure F3.04 — Synchronous acknowledgment and asynchronous processing (Step 3)**
+**Figure 37: Diagram 37 — Synchronous acknowledgment and asynchronous processing**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Synchronous acknowledgment and asynchronous processing. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -1593,7 +1994,14 @@ While drawing say: “The log is the replay boundary; consumers can fail indepen
 
 **Draw now:** late-data window correction.
 
-**Figure F3.05 — Late-data window correction (Step 3)**
+**Figure 38: Diagram 38 — Late-data window correction**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Late-data window correction. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -1641,7 +2049,14 @@ While drawing say: “Event-time correctness is bounded explicitly; very late po
 
 **Draw now:** query fan-out.
 
-**Figure F3.06 — Query fan-out (Step 3)**
+**Figure 39: Diagram 39 — Query fan-out**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Query fan-out. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -1679,7 +2094,14 @@ While drawing say: “Metadata expansion is bounded; workers enforce time and sa
 
 **Draw now:** the corrected storage tiers.
 
-**Figure F3.07 — The corrected storage tiers (Step 2)**
+**Figure 40: Diagram 40 — The corrected storage tiers**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The corrected storage tiers. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -1740,7 +2162,14 @@ While drawing say: “Relational storage catalogs series; compressed columnar ch
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F3.HLD — Metrics high-level architecture (Step 2)**
+**Figure 41: Diagram 41 — Metrics high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Metrics high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -1765,7 +2194,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F3.LLD — Ingest and query engine internals (Step 3)**
+**Figure 42: Diagram 42 — Ingest and query engine internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Ingest and query engine internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -1818,7 +2254,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** the initial paste lifecycle.
 
-**Figure F4.01 — The initial paste lifecycle (Step 3)**
+**Figure 43: Diagram 43 — The initial paste lifecycle**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The initial paste lifecycle. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -1882,7 +2325,14 @@ While drawing say: “The object is immutable after publication; only lifecycle 
 
 **Draw now:** the Pastebin NFR board.
 
-**Figure F4.02 — The Pastebin NFR board (Step 1)**
+**Figure 44: Diagram 44 — The Pastebin NFR board**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The Pastebin NFR board. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -1925,7 +2375,14 @@ While drawing say: “Read availability is aggressive, while deletion has an exp
 
 **Draw now:** the partial metadata and body model.
 
-**Figure F4.03 — The partial metadata and body model (Step 3)**
+**Figure 45: Diagram 45 — The partial metadata and body model**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Entity-relationship diagram (ERD) |
+| **Details** | Visual board update for: The partial metadata and body model. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 erDiagram
@@ -1987,7 +2444,14 @@ While drawing say: “Metadata decides visibility and lifecycle; object storage 
 
 **Draw now:** the corrected publish states.
 
-**Figure F4.04 — The corrected publish states (Step 3)**
+**Figure 46: Diagram 46 — The corrected publish states**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: The corrected publish states. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -2003,7 +2467,14 @@ While drawing say: “LIVE is reached only after durable bytes are verified, so 
 
 ### Beat 11 — Draw the write path
 
-**Figure F4.05 — Draw the write path (Step 3)**
+**Figure 47: Diagram 47 — Draw the write path**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw the write path. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -2043,7 +2514,14 @@ While drawing say: “A sweeper removes temporary objects that never gained comm
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F4.06 — Earn read architecture (Step 2)**
+**Figure 48: Diagram 48 — Earn read architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Earn read architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -2080,7 +2558,14 @@ While drawing say: “Metadata decides authorization and liveness; the CDN serve
 
 ### Beat 15 — Draw stampede control
 
-**Figure F4.07 — Draw stampede control (Step 3)**
+**Figure 49: Diagram 49 — Draw stampede control**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw stampede control. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -2118,7 +2603,14 @@ While drawing say: “The lock is short and local to a cache miss; it never beco
 
 **Draw now:** logical expiry and physical cleanup.
 
-**Figure F4.08 — Logical expiry and physical cleanup (Step 3)**
+**Figure 50: Diagram 50 — Logical expiry and physical cleanup**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Logical expiry and physical cleanup. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -2181,7 +2673,14 @@ While drawing say: “Read-time expiry provides correctness; the worker controls
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F4.HLD — Pastebin high-level architecture (Step 2)**
+**Figure 51: Diagram 51 — Pastebin high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Pastebin high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -2204,7 +2703,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F4.LLD — Paste publish internals (Step 3)**
+**Figure 52: Diagram 52 — Paste publish internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Paste publish internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -2257,7 +2763,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** the elevator actors and control boundary.
 
-**Figure F5.01 — The elevator actors and control boundary (Step 1)**
+**Figure 53: Diagram 53 — The elevator actors and control boundary**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The elevator actors and control boundary. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -2324,7 +2837,14 @@ While drawing say: “Software chooses assignments and commands, but hardware in
 
 **Draw now:** the elevator NFR trade-off board.
 
-**Figure F5.02 — The elevator NFR trade-off board (Step 1)**
+**Figure 54: Diagram 54 — The elevator NFR trade-off board**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 1 — Understand the problem and establish design scope |
+| **Diagram type** | Scope / requirements diagram |
+| **Details** | Visual board update for: The elevator NFR trade-off board. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 1 goal. |
 
 ```mermaid
 flowchart LR
@@ -2382,7 +2902,14 @@ While drawing say: “Safety is a hard guard; dispatch balances tail wait agains
 
 *(Step 3 — Deep dive)*
 
-**Figure F5.03 — Draw the class model (Step 3)**
+**Figure 55: Diagram 55 — Draw the class model**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Draw the class model. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 classDiagram
@@ -2447,7 +2974,14 @@ While drawing say: “Assignment and execution are separate ownership boundaries
 
 **Draw now:** the ownership correction.
 
-**Figure F5.04 — The ownership correction (Step 3)**
+**Figure 56: Diagram 56 — The ownership correction**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: The ownership correction. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -2493,7 +3027,14 @@ While drawing say: “Dispatcher proposes work, while each car is the single wri
 
 ### Beat 14 — State machine
 
-**Figure F5.05 — State machine (Step 3)**
+**Figure 57: Diagram 57 — State machine**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: State machine. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -2535,7 +3076,14 @@ While drawing say: “Movement requires closed doors and a positive safety inter
 
 ### Beat 16 — Draw runtime interaction
 
-**Figure F5.06 — Draw runtime interaction (Step 3)**
+**Figure 58: Diagram 58 — Draw runtime interaction**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw runtime interaction. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -2574,7 +3122,14 @@ While drawing say: “Each car processes commands sequentially; hardware reports
 
 **Draw now:** car-failure recovery.
 
-**Figure F5.07 — Car-failure recovery (Step 3)**
+**Figure 59: Diagram 59 — Car-failure recovery**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Car-failure recovery. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart TD
@@ -2621,7 +3176,14 @@ While drawing say: “Only hall calls are automatically reassigned; passenger sa
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F5.HLD — Elevator high-level architecture (Step 2)**
+**Figure 60: Diagram 60 — Elevator high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Elevator high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -2644,7 +3206,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F5.LLD — Car-controller modules and state (Step 3)**
+**Figure 61: Diagram 61 — Car-controller modules and state**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Car-controller modules and state. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -2721,7 +3290,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** ticketing discovery versus allocation.
 
-**Figure F6.01 — Ticketing discovery versus allocation (Step 3)**
+**Figure 62: Diagram 62 — Ticketing discovery versus allocation**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Ticketing discovery versus allocation. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -2778,7 +3354,14 @@ While drawing say: “Seat maps may lag, but hold creation always claims authori
 
 ### Beat 7 — Draw lifecycle
 
-**Figure F6.02 — Draw lifecycle (Step 3)**
+**Figure 63: Diagram 63 — Draw lifecycle**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: Draw lifecycle. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -2811,7 +3394,14 @@ While drawing say: “Expiry is a legal transition guarded by hold ID and versio
 
 **Draw now:** ticket payment crash recovery.
 
-**Figure F6.03 — Ticket payment crash recovery (Step 3)**
+**Figure 64: Diagram 64 — Ticket payment crash recovery**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Ticket payment crash recovery. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -2846,7 +3436,14 @@ While drawing say: “Payment pending protects the seat while settlement truth i
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F6.04 — Draw earned architecture (Step 2)**
+**Figure 65: Diagram 65 — Draw earned architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Draw earned architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -2881,7 +3478,14 @@ While drawing say: “The waiting room shapes load; it does not allocate seats.�
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F6.HLD — Tickets high-level architecture (Step 2)**
+**Figure 66: Diagram 66 — Tickets high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Tickets high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -2904,7 +3508,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F6.LLD — Seat-hold allocation internals (Step 3)**
+**Figure 67: Diagram 67 — Seat-hold allocation internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Seat-hold allocation internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -2979,7 +3590,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** ride-sharing state separation.
 
-**Figure F7.01 — Ride-sharing state separation (Step 3)**
+**Figure 68: Diagram 68 — Ride-sharing state separation**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Ride-sharing state separation. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -3049,7 +3667,14 @@ While drawing say: “Location proposes candidates; durable driver state enforce
 
 ### Beat 8 — Draw match sequence
 
-**Figure F7.02 — Draw match sequence (Step 3)**
+**Figure 69: Diagram 69 — Draw match sequence**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw match sequence. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -3075,7 +3700,14 @@ While drawing say: “Geo search proposes; durable driver state disposes.”
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F7.03 — Architecture (Step 2)**
+**Figure 70: Diagram 70 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -3113,7 +3745,14 @@ While drawing say: “Realtime delivery may retry; trip transitions are idempote
 
 **Draw now:** assignment loss and recovery.
 
-**Figure F7.04 — Assignment loss and recovery (Step 3)**
+**Figure 71: Diagram 71 — Assignment loss and recovery**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: Assignment loss and recovery. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -3145,7 +3784,14 @@ While drawing say: “A grace state avoids creating two drivers for one rider du
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F7.HLD — Rides high-level architecture (Step 2)**
+**Figure 72: Diagram 72 — Rides high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Rides high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -3168,7 +3814,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F7.LLD — Matching and assignment internals (Step 3)**
+**Figure 73: Diagram 73 — Matching and assignment internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Matching and assignment internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -3243,7 +3896,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** Dropbox metadata and content ownership.
 
-**Figure F8.01 — Dropbox metadata and content ownership (Step 3)**
+**Figure 74: Diagram 74 — Dropbox metadata and content ownership**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Dropbox metadata and content ownership. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -3299,7 +3959,14 @@ While drawing say: “Namespace mutations move pointers; immutable file versions
 
 ### Beat 7 — Draw upload
 
-**Figure F8.02 — Draw upload (Step 3)**
+**Figure 75: Diagram 75 — Draw upload**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw upload. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -3338,7 +4005,14 @@ While drawing say: “Uploaded chunks are not visible until metadata commit.”
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F8.03 — Architecture (Step 2)**
+**Figure 76: Diagram 76 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -3374,7 +4048,14 @@ While drawing say: “Object storage owns bytes; metadata owns reachability and 
 
 **Draw now:** sharing revocation propagation.
 
-**Figure F8.04 — Sharing revocation propagation (Step 3)**
+**Figure 77: Diagram 77 — Sharing revocation propagation**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Sharing revocation propagation. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -3408,7 +4089,14 @@ While drawing say: “Authoritative ACL changes first; cache invalidation then b
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F8.HLD — Dropbox high-level architecture (Step 2)**
+**Figure 78: Diagram 78 — Dropbox high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Dropbox high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -3431,7 +4119,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F8.LLD — Revision commit and sync internals (Step 3)**
+**Figure 79: Diagram 79 — Revision commit and sync internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Revision commit and sync internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -3506,7 +4201,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** URL-shortener latency lanes.
 
-**Figure F9.01 — URL-shortener latency lanes (Step 3)**
+**Figure 80: Diagram 80 — URL-shortener latency lanes**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: URL-shortener latency lanes. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -3561,7 +4263,14 @@ While drawing say: “Redirect latency and availability are isolated from analyt
 
 ### Beat 7 — Draw redirect path
 
-**Figure F9.02 — Draw redirect path (Step 3)**
+**Figure 81: Diagram 81 — Draw redirect path**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw redirect path. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -3601,7 +4310,14 @@ While drawing say: “Negative cache entries are short so new aliases become vis
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F9.03 — Architecture (Step 2)**
+**Figure 82: Diagram 82 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -3637,7 +4353,14 @@ While drawing say: “Redirect does not wait for analytics.”
 
 **Draw now:** viral-link disable propagation.
 
-**Figure F9.04 — Viral-link disable propagation (Step 3)**
+**Figure 83: Diagram 83 — Viral-link disable propagation**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Viral-link disable propagation. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -3672,7 +4395,14 @@ While drawing say: “The tombstone is immediate truth; purge plus TTL bounds st
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F9.HLD — URL Shortener high-level architecture (Step 2)**
+**Figure 84: Diagram 84 — URL Shortener high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: URL Shortener high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -3695,7 +4425,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F9.LLD — Hash and ID generation internals (Step 3)**
+**Figure 85: Diagram 85 — Hash and ID generation internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Hash and ID generation internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart TB
@@ -3773,7 +4510,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** the rate-limiter decision budget.
 
-**Figure F10.01 — The rate-limiter decision budget (Step 3)**
+**Figure 86: Diagram 86 — The rate-limiter decision budget**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The rate-limiter decision budget. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -3831,7 +4575,14 @@ While drawing say: “The common decision stays local and under five millisecond
 
 ### Beat 7 — Draw local/global path
 
-**Figure F10.02 — Draw local/global path (Step 3)**
+**Figure 87: Diagram 87 — Draw local/global path**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Draw local/global path. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -3877,7 +4628,14 @@ While drawing say: “Leases bound overshoot while removing a network hop from m
 
 **Draw now:** lease failure and epoch recovery.
 
-**Figure F10.03 — Lease failure and epoch recovery (Step 3)**
+**Figure 88: Diagram 88 — Lease failure and epoch recovery**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: Lease failure and epoch recovery. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -3923,7 +4681,14 @@ While drawing say: “Epochs prevent old regional leases from becoming valid aga
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F10.HLD — Rate Limiter high-level architecture (Step 2)**
+**Figure 89: Diagram 89 — Rate Limiter high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Rate Limiter high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -3946,7 +4711,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F10.LLD — Quota decision and lease internals (Step 3)**
+**Figure 90: Diagram 90 — Quota decision and lease internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Quota decision and lease internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4021,7 +4793,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** the RAG trust boundary.
 
-**Figure F11.01 — The RAG trust boundary (Step 3)**
+**Figure 91: Diagram 91 — The RAG trust boundary**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: The RAG trust boundary. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4076,7 +4855,14 @@ While drawing say: “Authorization filters retrieval itself, so forbidden text 
 
 ### Beat 7 — Draw ingestion
 
-**Figure F11.02 — Draw ingestion (Step 3)**
+**Figure 92: Diagram 92 — Draw ingestion**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Draw ingestion. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4126,7 +4912,14 @@ While drawing say: “A version is searchable only after all required artifacts 
 
 ### Beat 10 — Draw grounded answer
 
-**Figure F11.03 — Draw grounded answer (Step 3)**
+**Figure 93: Diagram 93 — Draw grounded answer**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Draw grounded answer. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -4164,7 +4957,14 @@ While drawing say: “Unauthorized chunks never enter the prompt.”
 
 **Draw now:** prompt-injection control flow.
 
-**Figure F11.04 — Prompt-injection control flow (Step 3)**
+**Figure 94: Diagram 94 — Prompt-injection control flow**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Prompt-injection control flow. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4183,7 +4983,14 @@ While drawing say: “Retrieved text is evidence, never control policy, and v1 e
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F11.HLD — RAG high-level architecture (Step 2)**
+**Figure 95: Diagram 95 — RAG high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: RAG high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4206,7 +5013,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F11.LLD — Retrieval and grounding internals (Step 3)**
+**Figure 96: Diagram 96 — Retrieval and grounding internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Retrieval and grounding internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4301,7 +5115,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** the device retry and ordering path.
 
-**Figure F12.01 — The device retry and ordering path (Step 3)**
+**Figure 97: Diagram 97 — The device retry and ordering path**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: The device retry and ordering path. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -4321,7 +5142,14 @@ While drawing say: “The sequence acknowledgment lets an offline device replay 
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F12.02 — Architecture (Step 2)**
+**Figure 98: Diagram 98 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4371,7 +5199,14 @@ While drawing say: “Broker partitions by device ID; malformed data is quaranti
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F12.HLD — IoT high-level architecture (Step 2)**
+**Figure 99: Diagram 99 — IoT high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: IoT high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4394,7 +5229,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F12.LLD — Telemetry validation internals (Step 3)**
+**Figure 100: Diagram 100 — Telemetry validation internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Telemetry validation internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4471,7 +5313,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** notification intent and delivery entities.
 
-**Figure F13.01 — Notification intent and delivery entities (Step 3)**
+**Figure 101: Diagram 101 — Notification intent and delivery entities**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Entity-relationship diagram (ERD) |
+| **Details** | Visual board update for: Notification intent and delivery entities. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 erDiagram
@@ -4508,7 +5357,14 @@ While drawing say: “One durable intent can create independent, auditable attem
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F13.02 — Architecture (Step 2)**
+**Figure 102: Diagram 102 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4562,7 +5418,14 @@ While drawing say: “Each channel has independent retries, rate limits, and cir
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F13.HLD — Notifications high-level architecture (Step 2)**
+**Figure 103: Diagram 103 — Notifications high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Notifications high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4585,7 +5448,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F13.LLD — Delivery orchestration internals (Step 3)**
+**Figure 104: Diagram 104 — Delivery orchestration internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Delivery orchestration internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4674,7 +5544,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** per-conversation ordering.
 
-**Figure F14.01 — Per-conversation ordering (Step 3)**
+**Figure 105: Diagram 105 — Per-conversation ordering**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Sequence diagram |
+| **Details** | Visual board update for: Per-conversation ordering. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 sequenceDiagram
@@ -4696,7 +5573,14 @@ While drawing say: “Concurrent sends become a single durable order at the conv
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F14.02 — Architecture (Step 2)**
+**Figure 106: Diagram 106 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4748,7 +5632,14 @@ While drawing say: “The conversation log is durable truth; sockets are deliver
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F14.HLD — Chat high-level architecture (Step 2)**
+**Figure 107: Diagram 107 — Chat high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Chat high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4771,7 +5662,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F14.LLD — Online and offline fanout internals (Step 3)**
+**Figure 108: Diagram 108 — Online and offline fanout internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Online and offline fanout internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -4861,7 +5759,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** the workflow task lifecycle.
 
-**Figure F15.01 — The workflow task lifecycle (Step 3)**
+**Figure 109: Diagram 109 — The workflow task lifecycle**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | State machine |
+| **Details** | Visual board update for: The workflow task lifecycle. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 stateDiagram-v2
@@ -4881,7 +5786,14 @@ While drawing say: “Database state advances the DAG, and a lease only grants t
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F15.02 — Architecture (Step 2)**
+**Figure 110: Diagram 110 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4932,7 +5844,14 @@ While drawing say: “The queue announces readiness; database state decides whet
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F15.HLD — Workflow high-level architecture (Step 2)**
+**Figure 111: Diagram 111 — Workflow high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Workflow high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -4955,7 +5874,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F15.LLD — Task lease and retry internals (Step 3)**
+**Figure 112: Diagram 112 — Task lease and retry internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Task lease and retry internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -5044,7 +5970,14 @@ While drawing say: “This is the component boundary I would test under concurre
 
 **Draw now:** training and serving consistency.
 
-**Figure F16.01 — Training and serving consistency (Step 3)**
+**Figure 113: Diagram 113 — Training and serving consistency**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Flowchart |
+| **Details** | Visual board update for: Training and serving consistency. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
@@ -5064,7 +5997,14 @@ While drawing say: “The model pins feature semantics, and both materialization
 
 *(Step 2 — HLD buy-in)*
 
-**Figure F16.02 — Architecture (Step 2)**
+**Figure 114: Diagram 114 — Architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -5118,7 +6058,14 @@ While drawing say: “The same versioned transformation definition drives both p
 
 **You:** “Here is the complete high-level shape. The synchronous path stays short, durable events drive secondary work, and I’ll pause for feedback before going deeper.”
 
-**Figure F16.HLD — Feature Store high-level architecture (Step 2)**
+**Figure 115: Diagram 115 — Feature Store high-level architecture**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 2 — Propose high-level design and get buy-in |
+| **Diagram type** | High-level design (HLD) box diagram |
+| **Details** | Visual board update for: Feature Store high-level architecture. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 2 goal. |
 
 ```mermaid
 flowchart LR
@@ -5141,7 +6088,14 @@ While drawing say: “Does this separation of synchronous truth and asynchronous
 
 **You:** “I’ll open the critical service and trace its correctness, retry, and failure boundaries without getting lost in incidental implementation details.”
 
-**Figure F16.LLD — Versioned feature-serving internals (Step 3)**
+**Figure 116: Diagram 116 — Versioned feature-serving internals**
+
+| | |
+|:---|:---|
+| **Interview step** | Step 3 — Design deep dive |
+| **Diagram type** | Low-level / component diagram (LLD) |
+| **Details** | Visual board update for: Versioned feature-serving internals. Draw this when the conversation reaches this beat; narrate each box/arrow before adding the next. |
+| **How to use** | Say the figure number out loud (“as in Figure N / Diagram N”), then explain the corresponding Step 3 goal. |
 
 ```mermaid
 flowchart LR
